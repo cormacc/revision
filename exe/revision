@@ -2,4 +2,4 @@
 
 require 'release'
 
-Release::CLI.start(ARGV)
+Revision::CLI.start(ARGV)

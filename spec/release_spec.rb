@@ -1,6 +1,6 @@
-RSpec.describe Release do
+RSpec.describe Revision do
   it "has a version number" do
-    expect(Release::VERSION).not_to be nil
+    expect(Revision::VERSION).not_to be nil
   end
 
   it "does something useful" do

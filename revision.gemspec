@@ -4,7 +4,7 @@ require "release/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "release"
-  spec.version       = Release::VERSION
+  spec.version       = Revision::VERSION
   spec.authors       = ["Cormac Cannon"]
   spec.email         = ["cormac.cannon@neuromoddevices.com"]
 

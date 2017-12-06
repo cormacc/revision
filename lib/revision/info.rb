@@ -1,10 +1,10 @@
 require_relative 'releasable'
 require_relative 'string_case'
 
-class Release::RevisionInfo
+class Revision::Info
   REVISION_INFO_FILE_SUFFIX = "Revision.c"
   SOURCE_FILE_PATH = "src"
-  REV_REGEX = /(\s*RevisionInfo\s+const\s+\S+_REVISION\s*=\s*\{\s*\{\s*)(\d+)(\s*,\s*)(\d+)(\s*,\s*)(\d+)(\s*\}\s*\};\s*)/
+  REV_REGEX = /(\s*Info\s+const\s+\S+_REVISION\s*=\s*\{\s*\{\s*)(\d+)(\s*,\s*)(\d+)(\s*,\s*)(\d+)(\s*\}\s*\};\s*)/
   REV_MAJOR_MATCH_INDEX = 2
   REV_MINOR_MATCH_INDEX = 4
   REV_PATCH_MATCH_INDEX = 6

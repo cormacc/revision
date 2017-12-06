@@ -1,6 +1,6 @@
 require 'pathname'
 
-class Release::Releasable
+class Revision::Releasable
 
   BUILD_DIR_BASE_NAME = "dist"
   BUILD_CONFIGURATION_DEFAULT = "default"
@@ -48,6 +48,6 @@ class Release::Releasable
   def get_bootloader_info
     fail "No bootloader associated with this module!" unless is_bootloadable()
     #fixme: This will only work if cwd = module root
-    Releasable.new(name: RELATIVE_PATH_TO_BOOTLOADER,unified_image: true)
+    self.class.new(name: RELATIVE_PATH_TO_BOOTLOADER,unified_image: true)
   end
 end
