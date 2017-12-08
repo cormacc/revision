@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'release'
+require 'revision'
 
 Revision::CLI.start(ARGV)

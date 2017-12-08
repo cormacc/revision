@@ -1,0 +1,58 @@
+* Revision
+
+  This gem automates incrementing multi-component revision IDs for C makefile projects.
+  It prompts for a change history entry associated with each increment and embeds it in a source file comment, formatted for extraction during archiving.
+
+  It can also be used to rebuild and archive the current revision.
+
+** Installation
+
+   #+BEGIN_NOTE
+   The gem hasn't been uploaded to rubygems.org as yet.
+   #+END_NOTE
+
+*** From rubygems.org
+    #+BEGIN_SRC sh
+      gem install revision
+    #+END_SRC
+
+*** From source
+    #+BEGIN_SRC sh
+      gem install bundler
+      git clone git@git.nmd.ie:gem/revision
+      cd revision
+      bundle install
+      rake build
+      gem install pkg/revision-<VERSION>.gem
+    #+END_SRC
+
+** Usage
+
+   Run the executable with no arguments to get usage instructions in your console window...
+
+   #+BEGIN_SRC sh
+     revision
+   #+END_SRC
+
+** Development
+
+   After checking out the repo, run =bin/setup= to install dependencies. Then, run =rake spec= to run the tests. You can also run =bin/console= for an interactive prompt that will allow you to experiment.
+
+   To install this gem onto your local machine, run =bundle exec rake install=. To release a new version, update the version number in =version.rb=, and then run =bundle exec rake release=, which will create a git tag for the version, push git commits and tags, and push the =.gem= file to [rubygems.org](https://rubygems.org).
+
+** Improvements
+   Refactor bootloader-related complexity out of ~Revision::Releasable~ and ~Revision::Info~
+   Instead, releasable and revisioninfo should expect simple flat structure, and coordination should happen at higher
+   (CLI) level.
+
+   Releasable name: defaults to <root folder name> -- overridable
+   Releasable rev_history file: defaults to <name>Revision.c -- overrideable (e.g. to have CD bootloader release update firmware revision history)
+
+   Top level CLI -- supports project level .releasables
+   similar syntax to that used in statemachine gem, e.g.
+
+
+
+** Contributing
+
+   Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/revision.

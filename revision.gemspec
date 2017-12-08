@@ -1,16 +1,16 @@
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "release/version"
+require "revision/version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "release"
+  spec.name          = "revision"
   spec.version       = Revision::VERSION
   spec.authors       = ["Cormac Cannon"]
   spec.email         = ["cormac.cannon@neuromoddevices.com"]
 
   spec.summary       = %q{Manage revision IDs for C projects}
   spec.description   = %q{Updates C project revision identifiers and associated change log. Also builds and packages project as a zip.}
-  spec.homepage      = "https://git.nmd.ie/gem/release"
+  spec.homepage      = "https://git.nmd.ie/gem/revision"
 
   # Prevent pushing this gem to RubyGems.org. To allow pushes either set the 'allowed_push_host'
   # to allow pushing to a single host or delete this section to allow pushing to any host.
