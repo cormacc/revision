@@ -82,7 +82,7 @@ module Revision
     def tag
       Dir.chdir(@root) do
         #Insert a blank line between the revision header and release notes, as per git commit best practice
-        commit_message = @revision.last_changelog_entry.insert(1,"\n")
+        commit_message = @revision.last_changelog_entry.insert(1,'')
         g = Git.init
         g.commit_all(commit_message)
         g.add_tag("v#{revision}")
