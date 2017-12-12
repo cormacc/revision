@@ -61,7 +61,7 @@ class Revision::Info
     text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
 
     #Insert start/end tags if not present
-    text = [text,CHANGELOG_START,CHANGELOG_END].join("\n#{@comment_prefix} ") unless text.match(CHANGELOG_START)
+    text = [text,CHANGELOG_START_TAG,CHANGELOG_END_TAG].join("\n#{@comment_prefix} ") unless text.match(CHANGELOG_START)
 
     text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
 
@@ -85,7 +85,7 @@ class Revision::Info
     File.open(@file).each_line do |line|
       if in_changelog
         break if line =~ CHANGELOG_END
-        yield strip_comment_prefix(line)
+        yield strip_comment_prefix(line.chomp)
       else
         in_changelog = line =~ CHANGELOG_START
       end
