@@ -12,18 +12,19 @@
    #+END_NOTE
 
 *** From rubygems.org
+
     #+BEGIN_SRC sh
       gem install revision
     #+END_SRC
 
 *** From source
+
     #+BEGIN_SRC sh
       gem install bundler
       git clone git@git.nmd.ie:gem/revision
       cd revision
       bundle install
-      rake build
-      gem install pkg/revision-<VERSION>.gem
+      bundle exec rake install
     #+END_SRC
 
 ** Usage
@@ -45,8 +46,52 @@
    Instead, releasable and revisioninfo should expect simple flat structure, and coordination should happen at higher
    (CLI) level.
 
-   Releasable name: defaults to <root folder name> -- overridable
-   Releasable rev_history file: defaults to <name>Revision.c -- overrideable (e.g. to have CD bootloader release update firmware revision history)
+   - Releasable name: defaults to <root folder name> -- overridable
+   - Releasable rev_history file: defaults to <name>Revision.c -- overrideable (e.g. to have CD bootloader release update firmware revision history)
+
+#+BEGIN_SRC
+:releasables:
+  - :id: firmware_bootloadable
+    :revision_src: src/FirmwareRevision.c
+    :build_steps:
+      - make -F Makefile CONF=bootloadable
+    :artefacts:
+      - :src: dist/bootloadable/production/firmware.production.hex
+        :dest: firmware_bootloadable_<REV>.hex
+  - :id: firmware_standalone
+    :revision_src: src/FirmwareRevision.c
+    :build_steps:
+      - make -F Makefile CONF=default
+    :artefacts:
+      - :src: dist/default/production/firmware.production.hex
+        :dest: firmware_standalone_<REV>.hex
+#+END_SRC
+
+#+BEGIN_SRC
+:releasables:
+  - :id: bootloader_standalone
+    :revision_src: ../firmware/src/FirmwareRevision.c
+    :build_steps:
+      - make -F Makefile CONF=default
+    :artefacts:
+      - :src: dist/default/production/bootloader.production.hex
+        :dest: bootloader_standalone_<REV>.hex
+        :zip: false
+  - :id: bootloader_unified
+    :revision_src: ../firmware/src/FirmwareRevision.c
+    :build_steps:
+      - make -F Makefile CONF=default
+    :artefacts:
+      - :src: dist/default/production/bootloader.production.hex
+        :dest: bootloader_standalone_<REV>.hex
+        :zip: false
+#+END_SRC
+
+#+BEGIN_SRC
+:releasables:
+  - :folder: firmware
+  - :folder: bootloader
+#+END_SRC
 
    Top level CLI -- supports project level .releasables
    similar syntax to that used in statemachine gem, e.g.

@@ -1,61 +1,69 @@
 require_relative 'releasable'
 require_relative 'string_case'
 
+
 class Revision::Info
-  REVISION_INFO_FILE_SUFFIX = "Revision.c"
-  SOURCE_FILE_PATH = "src"
-  REV_REGEX = /(\s*Info\s+const\s+\S+_REVISION\s*=\s*\{\s*\{\s*)(\d+)(\s*,\s*)(\d+)(\s*,\s*)(\d+)(\s*\}\s*\};\s*)/
-  REV_MAJOR_MATCH_INDEX = 2
-  REV_MINOR_MATCH_INDEX = 4
-  REV_PATCH_MATCH_INDEX = 6
-  attr_accessor :major
-  attr_accessor :minor
-  attr_accessor :patch
-  attr_accessor :module_info
+  DEFAULT_REGEX = /(?<prefix>\s*Info\s+const\s+\S+_REVISION\s*=\s*\{\s*\{\s*)(?<major>\d+)(?<sep1>\s*,\s*)(?<minor>\d+)(?<sep2>\s*,\s*)(?<patch>\d+)(?<postfix>\s*\}\s*\};\s*)/
+  DEFAULT_COMMENT_PREFIX = ' *'.freeze
+  CHANGELOG_START = /.*<BEGIN CHANGELOG>.*/
+  CHANGELOG_END = /.*<END CHANGELOG>.*/
 
-  def get_path()
-    File.join(@module_info.path, SOURCE_FILE_PATH, "#{@module_info.name.capitalize}#{REVISION_INFO_FILE_SUFFIX}")
-  end
+  attr_accessor :major, :minor, :patch
+  attr_accessor :file
+  attr_accessor :regex
+  attr_accessor :comment_prefix
 
-  def initialize(releasable)
-    @module_info = releasable
-    puts("Loading revision info from #{get_path}")
-    load_from_file
-    puts("... loaded revision #{self}")
+  def initialize(file, regex: nil, comment_prefix: nil)
+    @file=file
+    @regex = regex.nil? ? DEFAULT_REGEX : /#{regex}/
+    @comment_prefix = comment_prefix || DEFAULT_COMMENT_PREFIX
+    matched = false
+    File.open(@file).each_line do |line|
+      if line =~ @regex
+        @major = Regexp.last_match[:major].to_i
+        @minor = Regexp.last_match[:minor].to_i
+        @patch = Regexp.last_match[:patch].to_i
+        matched = true
+        break
+      end
+    end
+    raise "Failed to match against #{@regex}" unless matched
   end
 
   def patch_increment!
-    @patch = @patch+1
+    @patch += 1
     self
   end
 
   def minor_increment!
-    @minor = @minor+1
+    @minor += 1
     @patch = 0
     self
   end
 
   def major_increment!
-    @major = @major+1
+    @major += 1
     @minor = 0
     @patch = 0
     self
   end
 
-  def write_to_file(output_file_name = temporary_output_file_name)
-    output_file = File.new(output_file_name,"w")
-    in_revision_struct = false
-    File.open(get_path).each_line do |line|
-      line.gsub!(REV_REGEX, "\\1#{@major}\\3#{@minor}\\5#{@patch}\\7")
-      output_file.puts(line)
-      add_changelog_entry(output_file) if line =~ /<<BEGIN CHANGELOG>>/
-    end
-    output_file.close
+  def write(output_file_name)
+
+    ref_info = self.class.new(@file, regex: @regex)
+    raise 'No revision identifiers incremented' if ref_info.to_s == self.to_s
+
+    entry = get_changelog_entry
+
+    text = File.read(@file)
+    text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
+    text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
+
+    File.open(output_file_name, 'w') { |f| f.write(text) }
   end
 
   def write!
-    write_to_file
-    FileUtils.mv(temporary_output_file_name, get_path)
+    write(@file)
   end
 
   def to_s
@@ -64,45 +72,31 @@ class Revision::Info
 
   def changelog
     in_changelog = false
-    File.open(get_path).each_line do |line|
+    File.open(@file).each_line do |line|
       if in_changelog
-        break if line =~ /<<END CHANGELOG>>/
-        yield line.gsub(/^\s\*\s?/,"")
+        break if line =~ CHANGELOG_END
+        yield line.gsub(/^\s\*\s?/,'')
       else
-        in_changelog = line =~ /<<BEGIN CHANGELOG>>/
+        in_changelog = line =~ CHANGELOG_START
       end
     end
   end
 
-
-  private
-
-  def temporary_output_file_name
-    "#{get_path}.new"
+  # Prefixes the entry with an empty line, then prefixes each line with comment chars
+  # and converts the line entries to a single string
+  def format_changelog_entry(entry_lines)
+    entry_lines.unshift('').map { |line| "#{@comment_prefix} #{line}"}.join("\n")
   end
 
-  def add_changelog_entry(output_file)
-    output_file.puts(" *")
-    output_file.puts(" * Version #{self} (#{Time.now.strftime("%d %b %Y")})")
-    # output_file.puts(" * - CHANGES HERE")
-    puts("Changelog entry (one item per line / empty line to end):")
+  def get_changelog_entry
+    entry_lines = []
+    entry_lines << "Version #{self} (#{Time.now.strftime("%d %b %Y")})"
+    puts('Changelog entry_lines (one item per line / empty line to end):')
     while line = $stdin.readline.strip
       break if line.length == 0
-      output_file.puts(" * - #{line}")
+      entry_lines << "- #{line}"
     end
-  end
-
-  def load_from_file
-    # in_revision_struct = false
-    File.open(get_path).each_line do |line|
-      if line =~ REV_REGEX
-        # puts("Matched #{Regexp.last_match[0]}")
-        @major = Regexp.last_match[REV_MAJOR_MATCH_INDEX].to_i
-        @minor = Regexp.last_match[REV_MINOR_MATCH_INDEX].to_i
-        @patch = Regexp.last_match[REV_PATCH_MATCH_INDEX].to_i
-        break
-      end
-    end
+    entry_lines
   end
 
 end
