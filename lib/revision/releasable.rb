@@ -22,7 +22,7 @@ module Revision
     def self.load_definitions(root: nil)
       root ||= Dir.getwd
       config_file = File.join(root, CONFIG_FILE_NAME)
-      raise ArgumentError("Config file #{config_file} not found") unless File.exist?(config_file)
+      raise Errors::NoDefinition.new(root) unless File.exist?(config_file)
       puts "Loading releasable definitions from #{config_file} ..."
       YAML.load_file(config_file)
     end

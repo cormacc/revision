@@ -70,6 +70,10 @@ class Revision::Info
     "#{@major}.#{@minor}.#{@patch}"
   end
 
+  def strip_comment(line)
+    line.gsub(/^\s#{Regexp.escape(@comment_prefix)}\s?/,'')
+  end
+
   def changelog
     in_changelog = false
     File.open(@file).each_line do |line|

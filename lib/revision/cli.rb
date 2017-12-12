@@ -1,9 +1,9 @@
 require 'thor'
-#require 'rubygems'
-#require 'pathname'
 
 require_relative 'releasable'
 require_relative 'info'
+require_relative 'errors'
+
 module Revision
   class CLI < Thor
     class_option :dryrun, :type => :boolean, :default =>false
@@ -11,7 +11,19 @@ module Revision
     def initialize(*args)
       super
       #TODO Update this to traverse up the folder heirarchy until we find a releasables.yaml
-      @releasables = Releasable.from_folder(Dir.getwd)
+      wd = Dir.getwd
+      loop do
+        begin
+          @releasables = Releasable.from_folder(wd)
+          break
+        rescue Errors::NoDefinition
+          break if wd == File.expand_path('..',wd)
+          puts "No releasable found in #{wd}, trying parent..."
+          wd = File.expand_path('..',wd)
+          next
+        end
+      end
+      raise 'No definition file found in this directory or its ancestors' if @releasables.nil? || @releasables.empty?
     end
 
     desc "info", 'Display info for all defined releasables'
