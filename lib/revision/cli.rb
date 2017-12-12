@@ -85,11 +85,12 @@ module Revision
       say "Incrementing #{r.revision} to #{r.revision.public_send(increment_method)}"
       options[:dryrun] ? r.revision.write_to_file : r.revision.write!
       say ""
-      if ask("Commit changes to existing files and add a Git tag (this will NOT add new files to the repo)?").upcase=='Y'
+      say "The automatic commit / tag step assumes you're only checking in changes to existing files"
+      say "You can answer 'n' at the prompt and use 'revision tag' to generate a commit with the latest changelog entry and an associated tag after manually adding any new files to the repo"
+      say ""
+      if ask("Commit changes to existing files and add a Git tag (y/N)?").upcase=='Y'
         r.tag
         say "Change committed -- don't forget to push upstream"
-      else
-        say "You can use 'revision tag' to generate a commit with the latest changelog entry and an associated tag after manually adding any new files"
       end
     end
 

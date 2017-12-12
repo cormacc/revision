@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "0.1.4"
+  VERSION = "1.0.0"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.0.0 (12 Dec 2017)
+# - First fully functional release with new config file
 # 
 # Version 0.1.4 (12 Dec 2017)
 # - boo
