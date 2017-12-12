@@ -7,6 +7,7 @@ require_relative 'errors'
 module Revision
   class CLI < Thor
     class_option :dryrun, :type => :boolean, :default =>false
+    class_option :id, :default => nil #Initialized after loading definition
 
     def initialize(*args)
       super
@@ -24,6 +25,7 @@ module Revision
         end
       end
       raise 'No definition file found in this directory or its ancestors' if @releasables.nil? || @releasables.empty?
+      @id = options[:id] || @releasables.keys[0]
     end
 
     desc "info", 'Display info for all defined releasables'
@@ -31,26 +33,28 @@ module Revision
       puts "Found #{@releasables.values.length} releasables"
       puts ''
       puts @releasables.values.map {|r| r.to_s}.join("\n\n")
+      puts ''
+      puts "Default releasable ID: #{@id}"
     end
 
-    desc "patch <MODULE_NAME>", "Increment patch revision index"
-    def patch(releasable_id = nil)
-      do_increment(releasable_id, 'patch')
+    desc "patch", "Increment patch revision index"
+    def patch
+      do_increment('patch')
     end
 
-    desc "minor <MODULE_NAME>", "Increment minor revision index"
-    def minor(releasable_id = nil)
-      do_increment(releasable_id, 'minor')
+    desc "minor", "Increment minor revision index"
+    def minor
+      do_increment('minor')
     end
 
-    desc "major <MODULE_NAME>", "Increment major revision index"
-    def major(releasable_id = nil)
-      do_increment(releasable_id, 'major')
+    desc "major", "Increment major revision index"
+    def major
+      do_increment('major')
     end
 
-    desc "archive <MODULE_NAME>", "Archive module (default CWD)"
-    def archive(releasable_id = nil)
-      selected = releasable_id.nil? ? @releasables.values : [@releasables[releasable_id]]
+    desc "archive", "Archive releasables"
+    def archive
+      selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
       puts "Archiving #{selected.length} releasables..."
       selected.each do |r|
         r.build
@@ -58,25 +62,35 @@ module Revision
       end
     end
 
-    desc "changelog", "Display module change log on stdout"
-    def changelog(releasable_id = nil)
-      select_one(releasable_id).output_changelog($stdout)
+    desc "changelog", "Display change log on stdout"
+    def changelog
+      select_one.output_changelog($stdout)
+    end
+
+    desc "tag", "Commit the current revision to a local git repo and add a version tag"
+    def tag
+      select_one.tag
     end
 
     private
 
-    def select_one(releasable_id)
-      raise "Please specify one of #{@releasables.keys}" if releasable_id.nil? && @releasables.keys.length > 1
-      releasable_id ||= @releasables.keys[0]
-      @releasables[releasable_id]
+    def select_one
+      raise "Please specify one of #{@releasables.keys}" if options[:id].nil? && @releasables.keys.length > 1
+      @releasables[@id]
     end
 
-    def do_increment(releasable_id, type)
-      #TODO Add git commit and tag?
-      r = select_one(releasable_id)
+    def do_increment(type)
+      r = select_one
       increment_method = "#{type}_increment!"
-      puts "Incrementing #{r.revision} to #{r.revision.public_send(increment_method)}"
+      say "Incrementing #{r.revision} to #{r.revision.public_send(increment_method)}"
       options[:dryrun] ? r.revision.write_to_file : r.revision.write!
+      say ""
+      if ask("Commit changes to existing files and add a Git tag (this will NOT add new files to the repo)?").upcase=='Y'
+        r.tag
+        say "Change committed -- don't forget to push upstream"
+      else
+        say "You can use 'revision tag' to generate a commit with the latest changelog entry and an associated tag after manually adding any new files"
+      end
     end
 
   end

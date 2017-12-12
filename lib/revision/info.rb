@@ -5,8 +5,10 @@ require_relative 'string_case'
 class Revision::Info
   DEFAULT_REGEX = /(?<prefix>\s*Info\s+const\s+\S+_REVISION\s*=\s*\{\s*\{\s*)(?<major>\d+)(?<sep1>\s*,\s*)(?<minor>\d+)(?<sep2>\s*,\s*)(?<patch>\d+)(?<postfix>\s*\}\s*\};\s*)/
   DEFAULT_COMMENT_PREFIX = ' *'.freeze
-  CHANGELOG_START = /.*<BEGIN CHANGELOG>.*/
-  CHANGELOG_END = /.*<END CHANGELOG>.*/
+  CHANGELOG_START_TAG = '<BEGIN CHANGELOG>'.freeze
+  CHANGELOG_END_TAG = '<END CHANGELOG>'.freeze
+  CHANGELOG_START = /.*#{CHANGELOG_START_TAG}.*/
+  CHANGELOG_END = /.*#{CHANGELOG_END_TAG}.*/
 
   attr_accessor :major, :minor, :patch
   attr_accessor :file
@@ -57,6 +59,10 @@ class Revision::Info
 
     text = File.read(@file)
     text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
+
+    #Insert start/end tags if not present
+    text = [text,CHANGELOG_START,CHANGELOG_END].join("\n#{@comment_prefix} ") unless text.match(CHANGELOG_START)
+
     text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
 
     File.open(output_file_name, 'w') { |f| f.write(text) }
@@ -70,8 +76,8 @@ class Revision::Info
     "#{@major}.#{@minor}.#{@patch}"
   end
 
-  def strip_comment(line)
-    line.gsub(/^\s#{Regexp.escape(@comment_prefix)}\s?/,'')
+  def strip_comment_prefix(line)
+    line.gsub(/^\s*#{Regexp.escape(@comment_prefix)}\s?/,'')
   end
 
   def changelog
@@ -79,11 +85,25 @@ class Revision::Info
     File.open(@file).each_line do |line|
       if in_changelog
         break if line =~ CHANGELOG_END
-        yield line.gsub(/^\s\*\s?/,'')
+        yield strip_comment_prefix(line)
       else
         in_changelog = line =~ CHANGELOG_START
       end
     end
+  end
+
+  def last_changelog_entry
+    in_entry = false
+    lines = []
+    changelog do |line|
+      if line.length > 0
+        in_entry = true
+        lines << line
+      else
+        break if in_entry
+      end
+    end
+    lines
   end
 
   # Prefixes the entry with an empty line, then prefixes each line with comment chars

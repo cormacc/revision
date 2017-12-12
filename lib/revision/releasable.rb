@@ -1,6 +1,7 @@
 require 'pathname'
 require 'yaml'
 require 'zip'
+require 'git'
 
 module Revision
 
@@ -69,11 +70,22 @@ module Revision
 
     def build
       puts "Executing #{@build_steps.length} build steps..."
-      Dir.chdir(@root) do @build_steps.each_with_index do |step, index|
+      Dir.chdir(@root) do
+        @build_steps.each_with_index do |step, index|
           puts "... (#{index+1}/#{@build_steps.length}) #{step}"
           system(step)
           puts "WARNING: build step #{index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
         end
+      end
+    end
+
+    def tag
+      Dir.chdir(@root) do
+        #Insert a blank line between the revision header and release notes, as per git commit best practice
+        commit_message = @revision.last_changelog_entry.insert(1,"\n")
+        g = Git.init
+        g.commit_all(commit_message)
+        g.add_tag("v#{revision}")
       end
     end
 
@@ -93,8 +105,9 @@ module Revision
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
         @artefacts.each_with_index do |a, index|
+          src = a[:src].gsub(/<REV>/, @revision.to_s)
           dest = a[:dest].gsub(/<REV>/, @revision.to_s)
-          puts "... (#{index+1}/#{@artefacts.length}) #{a[:src]} => #{dest}"
+          puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
           zipfile.add(dest, File.join(@root, a[:src]))
         end
         puts "... embedding revision history as #{changelog_name} "
@@ -108,31 +121,6 @@ module Revision
       @revision.changelog {|line| output_stream.puts(line)}
     end
 
-
-    # DEPRECATED BELOW THIS LINE
-    def get_build_path
-      File.join(@path,BUILD_DIR_BASE_NAME,@configuration,@target)
-    end
-
-    def get_image_path
-      if @unified_image
-        File.join(get_build_path(),"#{@name}.#{@target}.unified.hex")
-      else
-        File.join(get_build_path(),"#{@name}.#{@target}.hex")
-      end
-    end
-
-    def is_bootloadable
-      # File.exist?(File.join(@path, RELATIVE_PATH_TO_BOOTLOADER))
-      puts("Testing #{File.join(Dir.getwd, RELATIVE_PATH_TO_BOOTLOADER)}")
-      File.exist?(File.join(Dir.getwd, RELATIVE_PATH_TO_BOOTLOADER))
-    end
-
-    def get_bootloader_info
-      fail "No bootloader associated with this module!" unless is_bootloadable()
-      #fixme: This will only work if cwd = module root
-      self.class.new(name: RELATIVE_PATH_TO_BOOTLOADER,unified_image: true)
-    end
   end
 
 end
