@@ -1,103 +1,259 @@
-* Revision
+#+TITLE: Revision management gem
+#+AUTHOR: Cormac Cannon
+#+EMAIL: cormac.cannon@neuromoddevices.com
+#+LANGUAGE: en
 
-  This gem automates incrementing multi-component revision IDs for C makefile projects.
-  It prompts for a change history entry associated with each increment and embeds it in a source file comment, formatted for extraction during archiving.
+# Generic properties
+# :eval never-export
+# ... Prevent auto evaluation of blocks on export. Evaluate them interactively instead
+# :results verbatim
+# ... Output results verbatim rather than autodetecting (which usually ends up tabular). Override per script using :results tabular
+#+PROPERTY: header-args :results verbatim :noweb yes :exports both :eval never-export
+# #+PROPERTY: header-args :results verbatim :noweb yes :exports both
 
-  It can also be used to rebuild and archive the current revision.
+# HTML EXPORT SETUP
 
-** Installation
+# 1. Auto-export to html on save (N.B. This doesn't work?)
+#    This can be done per-session by calling 'toggle-org-html-export-on-save'
+# Local variables:
+# eval: (add-hook 'after-save-hook 'org-html-export-to-html t t)
+# End:
 
-   #+BEGIN_NOTE
-   The gem hasn't been uploaded to rubygems.org as yet.
-   #+END_NOTE
+# 2. Apply a theme
+#+SETUPFILE: org-themes/theme-bigblow.setup
+# or alternatively #+SETUPFILE: theme-readtheorg.setup
 
-*** From rubygems.org
+* Overview
 
-    #+BEGIN_SRC sh
-      gem install revision
-    #+END_SRC
+  This gem automates revision management for source projects. The tool is language agnostic (used for C, ruby and matlab projects, to date -- though you're
+  probably better off using bundler for ruby projects). It supports per-project configuration using a yaml-format file called =releasables.yaml= located at
+  the project root.
 
-*** From source
+  It currently supports the following functionality
+  - Manage 3-component revision IDs embedded natively in source file
+  - Embeds/updates/extracts changelog in source file header/footer comments
+  - Automatically prompts for a changelog entry each time a revision identifier is incremented
+  - Optionally commits and tags changes to a git repo after an update to the revision ID
+  - Builds and archives projects in zip format (including release notes and arbitrary release artefacts defined
+
+* Installation
+
+  #+BEGIN_NOTE
+  The gem hasn't been uploaded to rubygems.org as yet.
+  #+END_NOTE
+
+** From rubygems.org
+
+   #+BEGIN_SRC sh
+     gem install revision
+   #+END_SRC
+
+** From source
+
+*** Checkout
 
     #+BEGIN_SRC sh
       gem install bundler
       git clone git@git.nmd.ie:gem/revision
       cd revision
+    #+END_SRC
+
+*** Install
+
+    #+BEGIN_SRC sh
       bundle install
       bundle exec rake install
     #+END_SRC
 
-** Usage
+    #+RESULTS:
+    #+begin_example
+    Using rake 10.5.0
+    Using bundler 1.16.0
+    Using coderay 1.1.2
+    Using diff-lcs 1.3
+    Using git 1.3.0
+    Using method_source 0.9.0
+    Using pry 0.11.3
+    Using rubyzip 1.2.1
+    Using thor 0.19.4
+    Using revision 1.0.0 from source at `.`
+    Using rspec-support 3.7.0
+    Using rspec-core 3.7.0
+    Using rspec-expectations 3.7.0
+    Using rspec-mocks 3.7.0
+    Using rspec 3.7.0
+    Bundle complete! 5 Gemfile dependencies, 15 gems now installed.
+    Use `bundle info [gemname]` to see where a bundled gem is installed.
+    revision 1.0.0 built to pkg/revision-1.0.0.gem.
+    revision (1.0.0) installed.
+    #+end_example
 
+* Usage
+
+** Supported Commands
    Run the executable with no arguments to get usage instructions in your console window...
 
    #+BEGIN_SRC sh
      revision
    #+END_SRC
 
-** Development
+   #+RESULTS:
+   #+begin_example
+   Loading releasable definitions from /home/cormacc/nextcloud/nmd/gem/revision/releasables.yaml ...
+   Commands:
+     revision archive         # Archive releasables
+     revision changelog       # Display change log on stdout
+     revision help [COMMAND]  # Describe available commands or one specific command
+     revision info            # Display info for all defined releasables
+     revision major           # Increment major revision index
+     revision minor           # Increment minor revision index
+     revision patch           # Increment patch revision index
+     revision tag             # Commit the current revision to a local git repo ...
 
-   After checking out the repo, run =bin/setup= to install dependencies. Then, run =rake spec= to run the tests. You can also run =bin/console= for an interactive prompt that will allow you to experiment.
+   Options:
+     [--dryrun], [--no-dryrun]
+     [--id=ID]
 
-   To install this gem onto your local machine, run =bundle exec rake install=. To release a new version, update the version number in =version.rb=, and then run =bundle exec rake release=, which will create a git tag for the version, push git commits and tags, and push the =.gem= file to [rubygems.org](https://rubygems.org).
+   #+end_example
 
-** Improvements
-   Refactor bootloader-related complexity out of ~Revision::Releasable~ and ~Revision::Info~
-   Instead, releasable and revisioninfo should expect simple flat structure, and coordination should happen at higher
-   (CLI) level.
+   #+BEGIN_NOTE
+   The tool can be run from any subfolder of a project root -- it will traverse the tree until it finds
+   an ancestor containing =releasables.yaml= OR can go no further (in which case it throws an error).
+   #+END_NOTE
 
-   - Releasable name: defaults to <root folder name> -- overridable
-   - Releasable rev_history file: defaults to <name>Revision.c -- overrideable (e.g. to have CD bootloader release update firmware revision history)
+*** Operating on multiple releasables
 
-#+BEGIN_SRC
-:releasables:
-  - :id: firmware_bootloadable
-    :revision_src: src/FirmwareRevision.c
-    :build_steps:
-      - make -F Makefile CONF=bootloadable
-    :artefacts:
-      - :src: dist/bootloadable/production/firmware.production.hex
-        :dest: firmware_bootloadable_<REV>.hex
-  - :id: firmware_standalone
-    :revision_src: src/FirmwareRevision.c
-    :build_steps:
-      - make -F Makefile CONF=default
-    :artefacts:
-      - :src: dist/default/production/firmware.production.hex
-        :dest: firmware_standalone_<REV>.hex
-#+END_SRC
+    A single =releasables.yaml= file can define multiple releasables, either implicitly (via inclusion) or explicitly
+    (see [[Configuration]] section below for examples). In this context, the ~info~ and ~archive~ commands
+    will operate on all defined releasables, whereas the remaining commands will require the releasable
+    to be specified using the ~--id=~ option, e.g.
 
-#+BEGIN_SRC
-:releasables:
-  - :id: bootloader_standalone
-    :revision_src: ../firmware/src/FirmwareRevision.c
-    :build_steps:
-      - make -F Makefile CONF=default
-    :artefacts:
-      - :src: dist/default/production/bootloader.production.hex
-        :dest: bootloader_standalone_<REV>.hex
-        :zip: false
-  - :id: bootloader_unified
-    :revision_src: ../firmware/src/FirmwareRevision.c
-    :build_steps:
-      - make -F Makefile CONF=default
-    :artefacts:
-      - :src: dist/default/production/bootloader.production.hex
-        :dest: bootloader_standalone_<REV>.hex
-        :zip: false
-#+END_SRC
+    #+BEGIN_SRC sh
+      revision minor --id=firmware
+    #+END_SRC
 
-#+BEGIN_SRC
-:releasables:
-  - :folder: firmware
-  - :folder: bootloader
-#+END_SRC
+** Configuration
 
-   Top level CLI -- supports project level .releasables
-   similar syntax to that used in statemachine gem, e.g.
+    YAML syntax is used for the configuration file. The [[Syntax]] and [[Examples]] sections below should provide sufficient
+    introduction to the limit subset of language features required to use this tool, however further info
+    may be found at the following links:
+
+    - http://docs.ansible.com/ansible/latest/YAMLSyntax.html
+    - http://www.yaml.org/start.html
+
+*** Syntax
+
+    The =releasables.yaml= file should contain a top level ~:releasables~ node.
+    Under this, you can create a list (or YAML /sequence/) of releasable definitions.
+
+    Each sequence item begins with a =-= and contains either a link to a folder containing its own =releasables.yaml=
+    defining one or more releasables ...
+
+    #+BEGIN_SRC yaml
+      - :folder: relative/path/to/a/releasable/folder
+    #+END_SRC
+
+    ... or a single inline releasable definition ...
+
+    #+BEGIN_SRC yaml
+      - :id: my_releasable
+        :revision:
+          # Source file containing the revision identifier
+          :file: lib/revision/version.rb
+          # Regex matching the source revision identifier. Must contain the following named capture groups
+          # - major, minor, patch :: Numeric (uint) sequences representing the three revision ID components
+          # - sep1, sep2 :: the characters separating the revision components
+          # - prefix, postfix :: sufficient syntactic context to match the revision ID uniquely
+          # N.B. this regex matches the version ID from the standard bundler gem skeleton
+          :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>")
+          # Comment char for the project language -- prefixed to each line of changelog entries
+          # Quotes only necessary here to prevent # being interpreted as the beginning of a YAML comment
+          :comment_prefix: "#"
+        # Sequence of build steps -- each item should be a valid shell command
+        :build_steps:
+          - bundle exec rake install
+        # Sequence of artefacts to package in the release archive.
+        # The revision archive will also include the revision history extracted as a text file
+        :artefacts:
+          # A binary artefact -- the <VER> (or <REV>) placeholders wil be replaced with the current revision ID
+          - :src: pkg/revision-<VER>.gem
+            :dest: revision-<VER>.gem
+          # This document -- the :dest: value defaults to duplicating :src: if not specified
+          - :src: README.org
+    #+END_SRC
+
+**** TODO add support for overridable defaults
+     e.g. via a =.releasables= configuration file in the user home dir.
+     Though this would be bad for collaborative development as the config file would live outside source control.
+     Possibly useful to support inclusion of a controlled configuration file instead? Primarily to define
+     a revision regex and comment prefix for a group of related releasables....
+
+*** Examples
+**** C project
+
+     #+BEGIN_NOTE
+     The ~:regex:~ and ~:comment_prefix:~ keys are absent in the C example below. This project started life as
+     managing some embedded C projects, and the default values reflect this
+     #+END_NOTE
+
+     #+BEGIN_SRC yaml
+        :releasables:
+          - :id: mbt_cd_firmware
+            :revision:
+              :file: src/FirmwareRevision.c
+            :build_steps:
+              - make --jobs=8 -f Makefile CONF=bootloadable
+            :artefacts:
+              - :src: dist/bootloadable/production/firmware.production.hex
+                :dest: mbt_cd_firmware_v<REV>.bootloadable.hex
+              - :src: dist/default/production/firmware.production.hex
+                :dest: mbt_cd_firmware_v<REV>.standalone.hex
+     #+END_SRC
+
+**** Ruby project
+
+    #+BEGIN_SRC yaml
+        :releasables:
+          - :id: revision
+            :revision:
+              :file: lib/revision/version.rb
+              :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>")
+              :comment_prefix: "#"
+            :build_steps:
+              - bundle exec rake install
+            :artefacts:
+              - :src: pkg/revision-<VER>.gem
+    #+END_SRC
+
+*** Heirarchical project
+    Rather than defining the releasable parameters inline, a =releasables.yaml= list entry can contain a (relative or absolute) link to another folder containing it's own =releasables.yaml=.
+
+    i.e assuming the earlier examples were in folders =examples/c= and =examples/ruby= relative to a common root, a separate =releasables.yaml=
+    at that root could include them as follows...
+
+    #+BEGIN_SRC yaml
+        :releasables:
+          - :folder: examples/c
+          - :folder: examples/ruby
+    #+END_SRC
+
+**** TODO consider supporting a higher-level aggregate revision ID
+
+    #+BEGIN_SRC yaml
+      :revision:
+        :file: release_log.txt
+      :releasables:
+        - :folder: examples/c
+        - :folder: examples/ruby
+    #+END_SRC
+
+* Development
+
+  After checking out the repo, run =bin/setup= to install dependencies. Then, run =rake spec= to run the tests. You can also run =bin/console= for an interactive prompt that will allow you to experiment.
+
+  To install this gem onto your local machine, run =bundle exec rake install=. To release a new version, update the version number in =version.rb=, and then run =bundle exec rake release=, which will create a git tag for the version, push git commits and tags, and push the =.gem= file to [rubygems.org](https://rubygems.org).
 
 
+* Contributing
 
-** Contributing
-
-   Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/revision.
+  Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/revision.

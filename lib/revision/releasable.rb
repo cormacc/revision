@@ -15,6 +15,8 @@ module Revision
 
     CONFIG_FILE_NAME = 'releasables.yaml'.freeze
 
+    REVISION_PLACEHOLDER = /<REV>|<VER>/
+
     attr_reader :root, :id, :revision, :build_steps, :artefacts
 
     # Load a file in yaml format containing one or more releasable definitions
@@ -105,10 +107,10 @@ module Revision
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
         @artefacts.each_with_index do |a, index|
-          src = a[:src].gsub(/<REV>/, @revision.to_s)
-          dest = a[:dest].gsub(/<REV>/, @revision.to_s)
+          src = a[:src].gsub(REVISION_PLACEHOLDER, @revision.to_s)
+          dest = a[:dest].gsub(REVISION_PLACEHOLDER, @revision.to_s)
           puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
-          zipfile.add(dest, File.join(@root, a[:src]))
+          zipfile.add(dest, File.join(@root, src))
         end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
