@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.0.1"
+  VERSION = "1.1.0"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.0 (13 Dec 2017)
+# - Updated to optionally push tags to the repo
 # 
 # Version 1.0.1 (13 Dec 2017)
 # - Corrected revision placeholder handling when archiving build artefacts

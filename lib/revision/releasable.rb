@@ -91,6 +91,13 @@ module Revision
       end
     end
 
+    def push
+      Dir.chdir(@root) do
+        g = Git.init
+        g.push('origin', g.current_branch, tags: true)
+      end
+    end
+
     def archive_name
       "#{@id}_v#{@revision}.zip"
     end
