@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.2"
+  VERSION = "1.1.3"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.3 (14 Dec 2017)
+# - Eliminated duplication of version ID in commit message body
 # 
 # Version 1.1.2 (14 Dec 2017)
 # - Removed redundant ':: ' from commit message headline
