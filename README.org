@@ -146,43 +146,53 @@
     The =releasables.yaml= file should contain a top level ~:releasables~ node.
     Under this, you can create a list (or YAML /sequence/) of releasable definitions.
 
-    Each sequence item begins with a =-= and contains either a link to a folder containing its own =releasables.yaml=
+    Each sequence item begins with a ~-~ and contains either a link to a folder containing its own =releasables.yaml=
     defining one or more releasables ...
 
     #+BEGIN_SRC yaml
       - :folder: relative/path/to/a/releasable/folder
     #+END_SRC
 
-    ... or a single inline releasable definition ...
+    ... or a single inline releasable definition.
+
+    #+BEGIN_NOTE
+    The lines beginning with '#' are explanatory comments
+    #+END_NOTE
 
     #+BEGIN_SRC yaml
       - :id: my_releasable
         :revision:
           # Source file containing the revision identifier
-          :file: lib/revision/version.rb
+          # This will also include changelog entries, embedded as comments
+          :src: lib/revision/version.rb
           # Regex matching the source revision identifier. Must contain the following named capture groups
           # - major, minor, patch :: Numeric (uint) sequences representing the three revision ID components
           # - sep1, sep2 :: the characters separating the revision components
           # - prefix, postfix :: sufficient syntactic context to match the revision ID uniquely
-          # N.B. this regex matches the version ID from the standard bundler gem skeleton
+          # N.B. this regex matches the version ID from the standard bundler gem skeleton,
+          # e.g. VERSION = "1.1.0"
           :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>")
           # Comment char for the project language -- prefixed to each line of changelog entries
           # Quotes only necessary here to prevent # being interpreted as the beginning of a YAML comment
           :comment_prefix: "#"
-        # Sequence of build steps -- each item should be a valid shell command
+        # Sequence of build steps -- each item should be a valid shell command, prefixed with the YAML sequence item token, '- '
         :build_steps:
           - bundle exec rake install
-        # Sequence of artefacts to package in the release archive.
+        # Sequence defining the files (build artefacts) to package in the release archive.
+        # Each artefact definition must include a :src: key/value pair.
+        # An optional :dest: value may be provided to rename the file during packaging, or just (as in the first entry below)
+        # to flatten the folder structure.
+        # Any <VER> (or <REV>) in the :src: or :dest: placeholders wil be replaced with the current revision ID
         # The revision archive will also include the revision history extracted as a text file
         :artefacts:
-          # A binary artefact -- the <VER> (or <REV>) placeholders wil be replaced with the current revision ID
+          # A binary artefact -- the
           - :src: pkg/revision-<VER>.gem
             :dest: revision-<VER>.gem
           # This document -- the :dest: value defaults to duplicating :src: if not specified
           - :src: README.org
     #+END_SRC
 
-**** TODO add support for overridable defaults
+**** TODO (or at least consider) add support for overridable defaults
      e.g. via a =.releasables= configuration file in the user home dir.
      Though this would be bad for collaborative development as the config file would live outside source control.
      Possibly useful to support inclusion of a controlled configuration file instead? Primarily to define
@@ -193,14 +203,14 @@
 
      #+BEGIN_NOTE
      The ~:regex:~ and ~:comment_prefix:~ keys are absent in the C example below. This project started life as
-     managing some embedded C projects, and the default values reflect this
+     managing some embedded C projects, and the default values reflect this.
      #+END_NOTE
 
      #+BEGIN_SRC yaml
         :releasables:
           - :id: mbt_cd_firmware
             :revision:
-              :file: src/FirmwareRevision.c
+              :src: src/FirmwareRevision.c
             :build_steps:
               - make --jobs=8 -f Makefile CONF=bootloadable
             :artefacts:
@@ -216,7 +226,7 @@
         :releasables:
           - :id: revision
             :revision:
-              :file: lib/revision/version.rb
+              :src: lib/revision/version.rb
               :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>")
               :comment_prefix: "#"
             :build_steps:
@@ -241,7 +251,7 @@
 
     #+BEGIN_SRC yaml
       :revision:
-        :file: release_log.txt
+        :src: release_log.txt
       :releasables:
         - :folder: examples/c
         - :folder: examples/ruby

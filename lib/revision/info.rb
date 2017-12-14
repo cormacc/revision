@@ -11,16 +11,16 @@ class Revision::Info
   CHANGELOG_END = /.*#{CHANGELOG_END_TAG}.*/
 
   attr_accessor :major, :minor, :patch
-  attr_accessor :file
+  attr_accessor :src
   attr_accessor :regex
   attr_accessor :comment_prefix
 
   def initialize(file, regex: nil, comment_prefix: nil)
-    @file=file
+    @src=file
     @regex = regex.nil? ? DEFAULT_REGEX : /#{regex}/
     @comment_prefix = comment_prefix || DEFAULT_COMMENT_PREFIX
     matched = false
-    File.open(@file).each_line do |line|
+    File.open(@src).each_line do |line|
       if line =~ @regex
         @major = Regexp.last_match[:major].to_i
         @minor = Regexp.last_match[:minor].to_i
@@ -50,18 +50,28 @@ class Revision::Info
     self
   end
 
+  def new_changelog_placeholder
+    placeholder = [@comment_prefix,CHANGELOG_START_TAG,CHANGELOG_END_TAG].join("\n#{@comment_prefix} ")
+    # Handle C block comments as a special case for legacy project support
+    # Could generalise the comment definition, but feels like unnecessary complexity...
+    if @src =~ /\.(c|cpp|h|hpp)$/ && !@comment_prefix =~ /#{Regexp.escape('//')}/
+      placeholder = "/**\n${placeholder}\n*/"
+    end
+    placeholder + "\n"
+  end
+
   def write(output_file_name)
 
-    ref_info = self.class.new(@file, regex: @regex)
+    ref_info = self.class.new(@src, regex: @regex)
     raise 'No revision identifiers incremented' if ref_info.to_s == self.to_s
 
     entry = get_changelog_entry
 
-    text = File.read(@file)
+    text = File.read(@src)
     text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
 
     #Insert start/end tags if not present
-    text = [text,CHANGELOG_START_TAG,CHANGELOG_END_TAG].join("\n#{@comment_prefix} ") unless text.match(CHANGELOG_START)
+    text += new_changelog unless text.match(CHANGELOG_START)
 
     text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
 
@@ -69,7 +79,7 @@ class Revision::Info
   end
 
   def write!
-    write(@file)
+    write(@src)
   end
 
   def to_s
@@ -82,7 +92,7 @@ class Revision::Info
 
   def changelog
     in_changelog = false
-    File.open(@file).each_line do |line|
+    File.open(@src).each_line do |line|
       if in_changelog
         break if line =~ CHANGELOG_END
         yield strip_comment_prefix(line.chomp)
@@ -115,7 +125,8 @@ class Revision::Info
   def get_changelog_entry
     entry_lines = []
     entry_lines << "Version #{self} (#{Time.now.strftime("%d %b %Y")})"
-    puts('Changelog entry_lines (one item per line / empty line to end):')
+    puts('Changelog entry (one item per line / empty line to end)')
+    puts('N.B. Git commit entry will use revision ID and first line of entry')
     while line = $stdin.readline.strip
       break if line.length == 0
       entry_lines << "- #{line}"

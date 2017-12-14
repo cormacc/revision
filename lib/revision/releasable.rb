@@ -52,7 +52,7 @@ module Revision
       root ||= Dir.getwd
       @root = Pathname.new(root).realpath
       @id = config[:id] || File.basename(@root)
-      @revision = Info.new(File.join(@root,config[:revision][:file]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
+      @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
       @build_steps = config[:build_steps]
       @artefacts = config[:artefacts]
       @artefacts.each { |a| a[:dest] ||= a[:src] }
@@ -66,7 +66,7 @@ module Revision
         - #{@build_steps.join("\n  - ")}
 
         Build artefacts:
-        #{artefacts.map{ |a| "  - #{a[:src]} => #{a[:dest]}" }.join("\n")}
+        #{artefacts.map{ |a| "- #{a[:src]}\n    => #{a[:dest]}" }.join("\n")}
       EOT
     end
 
@@ -83,19 +83,32 @@ module Revision
 
     def tag
       Dir.chdir(@root) do
+        tag_id = "v#{revision}"
+        changelog_entry = @revision.last_changelog_entry
         #Insert a blank line between the revision header and release notes, as per git commit best practice
-        commit_message = @revision.last_changelog_entry.insert(1,'').join("\n")
+        commit_lines = ["#{tag_id} :: #{changelog_entry[1]}", '']
+        commit_message = (commit_lines + changelog_entry).join("\n")
         g = Git.init
+        puts "Committing..."
+        puts commit_message
         g.commit_all(commit_message)
-        g.add_tag("v#{revision}")
+        puts "Tagging as #{tag_id}"
+        g.add_tag(tag_id)
       end
     end
 
     def push
+      pushed = false
       Dir.chdir(@root) do
         g = Git.init
-        g.push('origin', g.current_branch, tags: true)
+        begin
+          g.push('origin', g.current_branch, tags: true)
+          pushed = true
+        rescue GitExecuteError => e
+          puts "ERROR :: Cannot push to origin :: #{e}"
+        end
       end
+      pushed
     end
 
     def archive_name

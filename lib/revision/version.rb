@@ -1,9 +1,14 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.0"
+  VERSION = "1.1.1"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.1 (14 Dec 2017)
+# - Added git connection failure handling
+# - Revision commit message now includes first line of changelog entry
+# - Updated configuration syntax for consistency (:revision: :file: -> :revision: :src:)
 # 
 # Version 1.1.0 (13 Dec 2017)
 # - Updated to optionally push tags to the repo

@@ -90,10 +90,8 @@ module Revision
       say ""
       if ask("Commit changes to existing files and add a Git tag (y/N)?").upcase=='Y'
         r.tag
-        if ask("Push changes/tag to origin (Y/n)?").upcase=='N'
-          say "To push manually, type 'git push --tags' at a shell prompt"
-        else
-          r.push
+        if ask("Push changes/tag to origin (Y/n)?").upcase=='N' || !r.push
+          say "To push from the command line, type 'git push --tags' at a shell prompt"
         end
       end
     end
