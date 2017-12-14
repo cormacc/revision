@@ -86,7 +86,7 @@ module Revision
         tag_id = "v#{revision}"
         changelog_entry = @revision.last_changelog_entry
         #Insert a blank line between the revision header and release notes, as per git commit best practice
-        commit_lines = ["#{tag_id} :: #{changelog_entry[1]}", '']
+        commit_lines = ["#{tag_id} #{changelog_entry[1]}", '']
         commit_message = (commit_lines + changelog_entry).join("\n")
         g = Git.init
         puts "Committing..."
