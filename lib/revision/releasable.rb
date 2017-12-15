@@ -109,7 +109,7 @@ module Revision
     def push
       pushed = false
       Dir.chdir(@root) do
-        pushed = system("git push --tags")
+        pushed = system("git push") && system("git push --tags")
         puts "ERROR :: Failed to push to remote" unless pushed
       end
       pushed

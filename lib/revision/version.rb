@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.6"
+  VERSION = "1.1.7"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.7 (15 Dec 2017)
+# - Corrected push -- was pushing tags without commit
 # 
 # Version 1.1.6 (15 Dec 2017)
 # - Added full changelog entry as tag message
