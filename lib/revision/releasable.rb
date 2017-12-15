@@ -1,7 +1,7 @@
 require 'pathname'
 require 'yaml'
 require 'zip'
-require 'git'
+# require 'rugged'
 
 module Revision
 
@@ -46,6 +46,12 @@ module Revision
       end
       releasables
     end
+
+    # def git_repo
+    #   @git_repo ||= Rugged::Repository.discover('.')
+    #   puts 'WARNING: No git repo found in this directory or its ancestors' if @git_repo.nil?
+    #   @git_repo
+    # end
 
     def initialize(root: nil, config: {})
 
@@ -92,25 +98,19 @@ module Revision
           commit_lines += changelog_entry[2..-1]
         end
         commit_message = commit_lines.join("\n")
-        g = Git.init
         puts "Committing..."
         puts commit_message
-        g.commit_all(commit_message)
+        system("git commit -a -m \"#{commit_message}\"")
         puts "Tagging as #{tag_id}"
-        g.add_tag(tag_id)
+        system("git tag -a #{tag_id}")
       end
     end
 
     def push
       pushed = false
       Dir.chdir(@root) do
-        g = Git.init
-        begin
-          g.push('origin', g.current_branch, tags: true)
-          pushed = true
-        rescue GitExecuteError => e
-          puts "ERROR :: Cannot push to origin :: #{e}"
-        end
+        pushed = system("git push --tags")
+        puts "ERROR :: Failed to push to remote" unless pushed
       end
       pushed
     end

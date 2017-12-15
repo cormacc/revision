@@ -11,7 +11,6 @@ module Revision
 
     def initialize(*args)
       super
-      #TODO Update this to traverse up the folder heirarchy until we find a releasables.yaml
       wd = Dir.getwd
       loop do
         begin

@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.4"
+  VERSION = "1.1.5"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.5 (15 Dec 2017)
+# - Replaced ruby-git library with shell calls, as wasn't handling submodules correctly
 # 
 # Version 1.1.4 (14 Dec 2017)
 # - Minor message body reformatting
