@@ -102,7 +102,7 @@ module Revision
         puts commit_message
         system("git commit -a -m \"#{commit_message}\"")
         puts "Tagging as #{tag_id}"
-        system("git tag -a #{tag_id}")
+        system("git tag -a #{tag_id} -m \"#{changelog_entry.join("\n")}\"")
       end
     end
 

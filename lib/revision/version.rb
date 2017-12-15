@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.5"
+  VERSION = "1.1.6"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.6 (15 Dec 2017)
+# - Added full changelog entry as tag message
+# - Removed ruby-git dependency from gemspec
 # 
 # Version 1.1.5 (15 Dec 2017)
 # - Replaced ruby-git library with shell calls, as wasn't handling submodules correctly
