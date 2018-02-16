@@ -141,6 +141,11 @@ module Revision
       end
     end
 
+    def package
+      build
+      archive
+    end
+
     def output_changelog(output_stream)
       output_stream.puts "Revision history for #{@id} version #{@revision}"
       output_stream.puts ""

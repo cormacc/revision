@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.9"
+  VERSION = "1.1.10"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.10 (16 Feb 2018)
+# - Modified 'archive' command to just archive existing artefact -- i.e. skip build phase
+# - Added 'package' command that builds AND archives
 # 
 # Version 1.1.9 (16 Feb 2018)
 # - Fixed bug when adding first changelog entry to file without existing placeholders

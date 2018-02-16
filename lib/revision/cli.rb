@@ -63,8 +63,16 @@ module Revision
       selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
       puts "Archiving #{selected.length} releasables..."
       selected.each do |r|
-        r.build
         r.archive
+      end
+    end
+
+    desc 'package', 'Build and archive releasables'
+    def package
+      selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
+      puts "Building and archiving #{selected.length} releasables..."
+      selected.each do |r|
+        r.package
       end
     end
 
@@ -94,6 +102,9 @@ module Revision
       say "The automatic commit / tag step assumes you're only checking in changes to existing files"
       say "You can answer 'n' at the prompt and use 'revision tag' to generate a commit with the latest changelog entry and an associated tag after manually adding any new files to the repo"
       say ""
+      if ask("Rebuild and archive any releasables (Y/n)?").upcase!='N'
+        r.package
+      end
       if ask("Commit changes to existing files and add a Git tag (y/N)?").upcase=='Y'
         r.tag
         if ask("Push changes/tag to origin (Y/n)?").upcase=='N' || !r.push
