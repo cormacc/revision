@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.8"
+  VERSION = "1.1.9"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.1.9 (16 Feb 2018)
+# - Fixed bug when adding first changelog entry to file without existing placeholders
+# - Added standalone build command
 # 
 # Version 1.1.8 (15 Dec 2017)
 # - Added .yardopts to build documentation

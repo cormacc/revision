@@ -71,7 +71,7 @@ class Revision::Info
     text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
 
     #Insert start/end tags if not present
-    text += new_changelog unless text.match(CHANGELOG_START)
+    text += new_changelog_placeholder unless text.match(CHANGELOG_START)
 
     text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
 
