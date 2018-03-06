@@ -1,9 +1,14 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.1.10"
+  VERSION = "1.2.0"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.2.0 (06 Mar 2018)
+# - Build definition improvements (and new yaml structure)
+# - Added platform-agnostic environment variable definition (handles '~' replacement and :/; path separators)
+# - Added platform-agnostic packaging of binaries (i.e. appending .exe for windows when archiving)
 # 
 # Version 1.1.10 (16 Feb 2018)
 # - Modified 'archive' command to just archive existing artefact -- i.e. skip build phase
