@@ -59,7 +59,7 @@ module Revision
       @root = Pathname.new(root).realpath
       @id = config[:id] || File.basename(@root)
       @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
-      @build_steps = config[:build_steps]
+      @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts]
       @artefacts.each { |a| a[:dest] ||= a[:src] }
     end
@@ -68,21 +68,45 @@ module Revision
       <<~EOT
       #{@id} v#{@revision} @ #{@root}
 
+        Build environment:
+        #{@build_def[:environment]}
+
         Build pipeline:
-        - #{@build_steps.join("\n  - ")}
+        - #{@build_def[:steps].join("\n  - ")}
 
         Build artefacts:
         #{artefacts.map{ |a| "- #{a[:src]}\n    => #{a[:dest]}" }.join("\n")}
+
       EOT
     end
 
-    def build
-      puts "Executing #{@build_steps.length} build steps..."
+    def build(skip_steps = 0)
+      if @build_def.dig(:environment, :variables)
+        @build_def[:environment][:variables].each do |key, value|
+          if(key.match?('PATH'))
+            if Gem.win_platform?
+              value.gsub!(':', ';')
+              value.gsub!('/', '\\')
+            else
+              value.gsub!(':', ';')
+              value.gsub!('\\', '/')
+            end
+            # value.gsub!('/',Gem.win_platform? ? '\' : '/')
+            # value.gsub!('\',Gem.win_platform? ? '\' : '/')
+            value.gsub!('~', Dir.home)
+          end
+          puts "Setting environment variable '#{key}' to '#{value}'"
+          ENV[key] = value
+        end
+      end
+      steps = @build_def[:steps][skip_steps..-1]
+      puts "Executing #{steps.length} of #{@build_def[:steps].length} build steps..."
       Dir.chdir(@root) do
-        @build_steps.each_with_index do |step, index|
-          puts "... (#{index+1}/#{@build_steps.length}) #{step}"
+        steps.each_with_index do |step, index|
+          step_index = index+1+skip_steps
+          puts "... (#{step_index}/#{@build_def[:steps].length}) #{step}"
           system(step)
-          puts "WARNING: build step #{index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
+          puts "WARNING: build step #{step_index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
         end
       end
     end
@@ -133,6 +157,11 @@ module Revision
         @artefacts.each_with_index do |a, index|
           src = a[:src].gsub(REVISION_PLACEHOLDER, @revision.to_s)
           dest = a[:dest].gsub(REVISION_PLACEHOLDER, @revision.to_s)
+          if Gem.win_platform? && !src.end_with?('.exe') && File.exist?(File.join(@root, src + '.exe'))
+            puts "... packing on windows -- appending '.exe'"
+            src += '.exe'
+            dest += '.exe' unless dest.end_with?('.exe')
+          end
           puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
           zipfile.add(dest, File.join(@root, src))
         end

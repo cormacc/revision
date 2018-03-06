@@ -52,10 +52,12 @@ module Revision
     end
 
     desc 'build', 'Build releasable(s)'
+    method_option :skip, :aliases => "-s", :type => :numeric, :default => 0, :desc => "Skip the specified number of build steps"
     def build
       selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
       puts "Building #{selected.length} releasable(s)..."
-      selected.each(&:build)
+      # selected.each(&:build)
+      selected.each { |r| r.build(options[:skip])}
     end
 
     desc 'archive', 'Archive releasables'
