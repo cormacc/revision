@@ -61,7 +61,8 @@ module Revision
       @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts]
-      @artefacts.each { |a| a[:dest] ||= a[:src] }
+
+      @artefacts.each { |a| a[:dest] ||= a[:src] } unless @artefacts.empty?
     end
 
     def to_s

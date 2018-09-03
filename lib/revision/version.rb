@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.2.0"
+  VERSION = "1.2.1"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.2.1 (03 Sep 2018)
+# - Update to allow releasable without any artefacts
 # 
 # Version 1.2.0 (06 Mar 2018)
 # - Build definition improvements (and new yaml structure)
