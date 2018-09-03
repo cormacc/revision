@@ -3,11 +3,13 @@ require 'thor'
 require_relative 'releasable'
 require_relative 'info'
 require_relative 'errors'
+require_relative 'version'
 
 module Revision
   class CLI < Thor
     class_option :dryrun, :type => :boolean, :default =>false
     class_option :id, :default => nil #Initialized after loading definition
+    map %w[--version -v] => :__print_version
 
     def initialize(*args)
       super
@@ -25,6 +27,11 @@ module Revision
       end
       raise 'No definition file found in this directory or its ancestors' if @releasables.nil? || @releasables.empty?
       @id = options[:id] || @releasables.keys[0]
+    end
+
+    desc "--version, -v", "print the version"
+    def __print_version
+      puts Revision::VERSION
     end
 
     desc 'info', 'Display info for all defined releasables'
