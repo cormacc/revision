@@ -59,10 +59,10 @@ module Revision
       @root = Pathname.new(root).realpath
       @id = config[:id] || File.basename(@root)
       @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
+      # Legacy definition syntax compatibility
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
-      @artefacts = config[:artefacts]
-
-      @artefacts.each { |a| a[:dest] ||= a[:src] } unless @artefacts.empty?
+      @artefacts = config[:artefacts] || []
+      @artefacts.each { |a| a[:dest] ||= a[:src] } unless @artefacts.nil? || @artefacts.empty?
     end
 
     def to_s
@@ -73,10 +73,10 @@ module Revision
         #{@build_def[:environment]}
 
         Build pipeline:
-        - #{@build_def[:steps].join("\n  - ")}
+        - #{@build_def[:steps].nil? ? 'empty' : @build_def[:steps].join("\n  - ")}
 
         Build artefacts:
-        #{artefacts.map{ |a| "- #{a[:src]}\n    => #{a[:dest]}" }.join("\n")}
+        #{@artefacts.empty? ? '- None defined' : @artefacts.map{ |a| "- #{a[:src]}\n    => #{a[:dest]}" }.join("\n") }
 
       EOT
     end
