@@ -97,8 +97,12 @@ module Revision
 
     private
 
+    def id_options
+      @releasables.keys.map { |id| "'-id #{id}'"}.join(', ')
+    end
+
     def select_one
-      raise "Please specify one of #{@releasables.keys}" if options[:id].nil? && @releasables.keys.length > 1
+      raise "Please specify one of #{id_options}" if options[:id].nil? && @releasables.keys.length > 1
       @releasables[@id]
     end
 

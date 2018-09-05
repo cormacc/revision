@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.2.3"
+  VERSION = "1.2.4"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.2.4 (05 Sep 2018)
+# - Added commit message and tag details to `revision info`
+# - Minor refactoring
 # 
 # Version 1.2.3 (03 Sep 2018)
 # - Tidied up `revision info` output formatting

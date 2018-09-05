@@ -17,7 +17,7 @@ module Revision
 
     REVISION_PLACEHOLDER = /<REV>|<VER>/
 
-    attr_reader :root, :id, :revision, :build_steps, :artefacts
+    attr_reader :root, :id, :revision, :build_steps, :artefacts, :git_tag_prefix
 
     # Load a file in yaml format containing one or more releasable definitions
     # @param root [String] An optional root directory argument
@@ -59,6 +59,7 @@ module Revision
       @root = Pathname.new(root).realpath
       @id = config[:id] || File.basename(@root)
       @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
+      @git_tag_prefix = config[:revision][:git_tag_prefix].nil? ? 'v' : "#{config[:revision][:git_tag_prefix]}_v"
       # Legacy definition syntax compatibility
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts] || []
@@ -78,6 +79,11 @@ module Revision
         Build artefacts:
         #{@artefacts.empty? ? '- None defined' : @artefacts.map{ |a| "- #{a[:src]}\n    => #{a[:dest]}" }.join("\n") }
 
+        Git commit details:
+        - log entry: #{commit_message}
+        Git tag id #{tag_id} / annotation:
+          #{tag_annotation.gsub("\n","\n    ")}
+
       EOT
     end
 
@@ -89,11 +95,9 @@ module Revision
               value.gsub!(':', ';')
               value.gsub!('/', '\\')
             else
-              value.gsub!(':', ';')
+              value.gsub!(';', ':')
               value.gsub!('\\', '/')
             end
-            # value.gsub!('/',Gem.win_platform? ? '\' : '/')
-            # value.gsub!('\',Gem.win_platform? ? '\' : '/')
             value.gsub!('~', Dir.home)
           end
           puts "Setting environment variable '#{key}' to '#{value}'"
@@ -112,22 +116,32 @@ module Revision
       end
     end
 
+    def tag_id
+      "#{@git_tag_prefix}#{revision}"
+    end
+
+    def tag_annotation
+      @revision.last_changelog_entry.join("\n")
+    end
+
+    def commit_message
+      changelog_entry = @revision.last_changelog_entry
+      #Insert a blank line between the revision header and release notes, as per git commit best practice
+      commit_lines = ["#{tag_id} #{changelog_entry[1]}", '']
+      if changelog_entry.length > 2
+        commit_lines << "Also..."
+        commit_lines += changelog_entry[2..-1]
+      end
+      commit_lines.join("\n")
+    end
+
     def tag
       Dir.chdir(@root) do
-        tag_id = "v#{revision}"
-        changelog_entry = @revision.last_changelog_entry
-        #Insert a blank line between the revision header and release notes, as per git commit best practice
-        commit_lines = ["#{tag_id} #{changelog_entry[1]}", '']
-        if changelog_entry.length > 2
-          commit_lines << "Also..."
-          commit_lines += changelog_entry[2..-1]
-        end
-        commit_message = commit_lines.join("\n")
         puts "Committing..."
         puts commit_message
         system("git commit -a -m \"#{commit_message}\"")
         puts "Tagging as #{tag_id}"
-        system("git tag -a #{tag_id} -m \"#{changelog_entry.join("\n")}\"")
+        system("git tag -a #{tag_id} -m \"#{tag_annotation}\"")
       end
     end
 
