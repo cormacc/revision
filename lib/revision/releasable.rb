@@ -162,27 +162,42 @@ module Revision
       "#{@id}_revision_history_v#{@revision}.txt"
     end
 
+    def artefact_map(dest_prefix = '')
+      amap = {}
+      @artefacts.each_with_index do |a, index|
+        src = a[:src].gsub(REVISION_PLACEHOLDER, @revision.to_s)
+        dest = a[:dest].gsub(REVISION_PLACEHOLDER, @revision.to_s)
+        if Gem.win_platform? && !src.end_with?('.exe') && File.exist?(File.join(@root, src + '.exe'))
+          puts "... windows platform -- appending '.exe' (#{src})"
+          src += '.exe'
+          dest += '.exe' unless dest.end_with?('.exe')
+        end
+        src = File.join(@root,src)
+        dest = dest_prefix.empty? ? dest : File.join(dest_prefix, dest)
+        amap[src] = dest
+        puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
+      end
+      amap
+    end
+
     def archive
-      puts "Packaging #{@artefacts.length} build artefacts as #{archive_name}..."
+      puts "Archiving #{@artefacts.length} build artefacts as #{archive_name}..."
+      puts artefact_map
       if File.exist?(archive_name)
         puts "... deleting existing archive"
         File.delete(archive_name)
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
-        @artefacts.each_with_index do |a, index|
-          src = a[:src].gsub(REVISION_PLACEHOLDER, @revision.to_s)
-          dest = a[:dest].gsub(REVISION_PLACEHOLDER, @revision.to_s)
-          if Gem.win_platform? && !src.end_with?('.exe') && File.exist?(File.join(@root, src + '.exe'))
-            puts "... packing on windows -- appending '.exe'"
-            src += '.exe'
-            dest += '.exe' unless dest.end_with?('.exe')
-          end
-          puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
-          zipfile.add(dest, File.join(@root, src))
-        end
+        artefact_map.each { |src, dest| zipfile.add(dest,src) }
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
       end
+    end
+
+    def deploy(destination)
+      puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
+      artefact_map(destination).each { |src, dest| FileUtils.cp(src,dest) }
+      #TODO Add changelog
     end
 
     def package

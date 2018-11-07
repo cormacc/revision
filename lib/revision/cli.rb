@@ -67,12 +67,22 @@ module Revision
       selected.each { |r| r.build(options[:skip])}
     end
 
-    desc 'archive', 'Archive releasables'
+    desc 'archive', 'Archive releasable(s)'
     def archive
       selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
       puts "Archiving #{selected.length} releasables..."
       selected.each do |r|
         r.archive
+      end
+    end
+
+    desc 'deploy', 'Deploy releasable(s)'
+    method_option :to, :aliases => "-t", :type => :string, :required => true, :desc => "Path to deploy to"
+    def deploy
+      selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
+      puts "Deploying #{selected.length} releasables..."
+      selected.each do |r|
+        r.deploy(options[:to])
       end
     end
 
