@@ -64,6 +64,7 @@ module Revision
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts] || []
       @artefacts.each { |a| a[:dest] ||= a[:src] } unless @artefacts.nil? || @artefacts.empty?
+      @config = config
     end
 
     def to_s
@@ -194,7 +195,14 @@ module Revision
       end
     end
 
-    def deploy(destination)
+    # def deploy(destination)
+    def deploy(destination='')
+      if destination=='' and @config.dig(:deploy, :dest)
+        destination = @config[:deploy][:dest]
+      end
+
+      raise Errors::NotSpecified.new(':deploy/:dest') if destination==''
+
       puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
       artefact_map(destination).each { |src, dest| FileUtils.cp(src,dest) }
       #TODO Add changelog

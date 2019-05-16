@@ -77,7 +77,7 @@ module Revision
     end
 
     desc 'deploy', 'Deploy releasable(s)'
-    method_option :to, :aliases => "-t", :type => :string, :required => true, :desc => "Path to deploy to"
+    method_option :to, :aliases => "-t", :type => :string, :default => '', :desc => "Path to deploy to"
     def deploy
       selected = options[:id].nil? ? @releasables.values : [@releasables[options[:id]]]
       puts "Deploying #{selected.length} releasables..."
