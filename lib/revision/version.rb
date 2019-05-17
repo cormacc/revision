@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.2.6"
+  VERSION = "1.2.7"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.2.7 (17 May 2019)
+# - 'deploy' now expands '~' in paths
 # 
 # Version 1.2.6 (17 May 2019)
 # - Updated deploy to use default dest from yaml (if specified)

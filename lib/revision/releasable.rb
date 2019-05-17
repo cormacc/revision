@@ -202,6 +202,7 @@ module Revision
       end
 
       raise Errors::NotSpecified.new(':deploy/:dest') if destination==''
+      destination = File.expand_path(destination)
 
       puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
       artefact_map(destination).each { |src, dest| FileUtils.cp(src,dest) }

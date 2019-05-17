@@ -35,12 +35,11 @@
   - Automatically prompts for a changelog entry each time a revision identifier is incremented
   - Optionally commits and tags changes to a git repo after an update to the revision ID
   - Builds and archives projects in zip format (including release notes and arbitrary release artefacts defined
+  - Deploys
 
 * Installation
-
-  #+BEGIN_NOTE
-  The gem hasn't been uploaded to rubygems.org as yet.
-  #+END_NOTE
+** Dependencies
+   Ruby / Rubygems installed
 
 ** From rubygems.org
 
