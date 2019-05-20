@@ -240,7 +240,7 @@ module Revision
         end
         FileUtils.cp_r(src,dest)
       end
-      File.new('destination/#{changelog_name}') { |f| output_changelog(f)}
+      File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
       if @config.dig(:deploy, :post)
         exec_pipeline('deploy (post)', @config[:deploy][:post])
       end
