@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.2.8"
+  VERSION = "1.3.0"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.3.0 (20 May 2019)
+# - Added :archive: (archive root definition)
+# - Added optional :pre: and :post: steps to :deploy: definition
 # 
 # Version 1.2.8 (20 May 2019)
 # - Updated Git tag/commit behaviour -- now commit/tag/push by default

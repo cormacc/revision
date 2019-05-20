@@ -88,6 +88,20 @@ module Revision
       EOT
     end
 
+    def exec_pipeline(type, steps, skip_steps=0)
+      exec_steps = steps[skip_steps..-1]
+      puts "{type} :: Executing steps #{skip_steps+1} to #{steps.length}..."
+      Dir.chdir(@root) do
+        exec_steps.each_with_index do |step, index|
+          step_index = index+1+skip_steps
+          puts "... (#{step_index}/#{steps.length}) #{step}"
+          system(step)
+          puts "{type} :: WARNING: step #{step_index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
+        end
+      end
+
+    end
+
     def build(skip_steps = 0)
       if @build_def.dig(:environment, :variables)
         @build_def[:environment][:variables].each do |key, value|
@@ -105,16 +119,17 @@ module Revision
           ENV[key] = value
         end
       end
-      steps = @build_def[:steps][skip_steps..-1]
-      puts "Executing #{steps.length} of #{@build_def[:steps].length} build steps..."
-      Dir.chdir(@root) do
-        steps.each_with_index do |step, index|
-          step_index = index+1+skip_steps
-          puts "... (#{step_index}/#{@build_def[:steps].length}) #{step}"
-          system(step)
-          puts "WARNING: build step #{step_index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
-        end
-      end
+      exec_pipeline('build', @build_def[:steps], skip_steps)
+      # steps = @build_def[:steps][skip_steps..-1]
+      # puts "Executing #{steps.length} of #{@build_def[:steps].length} build steps..."
+      # Dir.chdir(@root) do
+      #   steps.each_with_index do |step, index|
+      #     step_index = index+1+skip_steps
+      #     puts "... (#{step_index}/#{@build_def[:steps].length}) #{step}"
+      #     system(step)
+      #     puts "WARNING: build step #{step_index}: #{step} exit status #{$?.exitstatus}" unless $?.exitstatus.zero?
+      #   end
+      # end
     end
 
     def tag_id
@@ -196,6 +211,13 @@ module Revision
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
       end
+
+      if @config.dig(:archive)
+        archive_root = File.expand_path(@config[:archive])
+        puts "... moving #{archive_name} to #{archive_root}"
+        FileUtils.mkdir_p(archive_root)
+        FileUtils.mv(archive_name, archive_root)
+      end
     end
 
     def deploy(destination='')
@@ -206,6 +228,10 @@ module Revision
       raise Errors::NotSpecified.new(':deploy/:dest') if destination==''
       destination = File.expand_path(destination)
 
+      if @config.dig(:deploy, :pre)
+        exec_pipeline('deploy (pre)', @config[:deploy][:pre])
+      end
+
       puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
       artefact_map(destination).each do |src, dest|
         if File.exist?(dest)
@@ -214,8 +240,10 @@ module Revision
         end
         FileUtils.cp_r(src,dest)
       end
-      #TODO Add changelog
       File.new('destination/#{changelog_name}') { |f| output_changelog(f)}
+      if @config.dig(:deploy, :post)
+        exec_pipeline('deploy (post)', @config[:deploy][:post])
+      end
     end
 
     def package
