@@ -128,7 +128,7 @@ module Revision
       if ask("Rebuild and archive any releasables (Y/n)?").upcase!='N'
         r.package
       end
-      if ask("Commit changes to existing files and add a Git tag (y/N)?").upcase=='Y'
+      if ask("Commit changes to existing files and add a Git tag (Y/n)?").upcase!='N'
         r.tag
         if ask("Push changes/tag to origin (Y/n)?").upcase=='N' || !r.push
           say "To push from the command line, type 'git push --tags' at a shell prompt"

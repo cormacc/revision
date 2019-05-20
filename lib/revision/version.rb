@@ -1,9 +1,13 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.2.7"
+  VERSION = "1.2.8"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.2.8 (20 May 2019)
+# - Updated Git tag/commit behaviour -- now commit/tag/push by default
+# - Updated deploy to remove existing targets and copy entire directory trees
 # 
 # Version 1.2.7 (17 May 2019)
 # - 'deploy' now expands '~' in paths

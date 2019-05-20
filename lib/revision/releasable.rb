@@ -189,13 +189,15 @@ module Revision
         File.delete(archive_name)
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
-        artefact_map.each { |src, dest| zipfile.add(dest,src) }
+        artefact_map.each do |src, dest|
+          #TODO: Add directory processing....
+          zipfile.add(dest,src)
+        end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
       end
     end
 
-    # def deploy(destination)
     def deploy(destination='')
       if destination=='' and @config.dig(:deploy, :dest)
         destination = @config[:deploy][:dest]
@@ -205,8 +207,15 @@ module Revision
       destination = File.expand_path(destination)
 
       puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
-      artefact_map(destination).each { |src, dest| FileUtils.cp(src,dest) }
+      artefact_map(destination).each do |src, dest|
+        if File.exist?(dest)
+          puts "... deleting existing '#{dest}'"
+          FileUtils.rm_rf(dest)
+        end
+        FileUtils.cp_r(src,dest)
+      end
       #TODO Add changelog
+      File.new('destination/#{changelog_name}') { |f| output_changelog(f)}
     end
 
     def package
