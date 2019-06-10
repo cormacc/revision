@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.3.1"
+  VERSION = "1.4.0"
 end
 
 # <BEGIN CHANGELOG>
+# 
+# Version 1.4.0 (10 Jun 2019)
+# - Now allow the definition of one or more 'secondary_revisions', where a revision ID can be updated with or without an embedded changelog
 # 
 # Version 1.3.1 (20 May 2019)
 # - Corrected bug when deploying changelog:w

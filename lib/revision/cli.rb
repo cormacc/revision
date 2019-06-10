@@ -119,8 +119,26 @@ module Revision
     def do_increment(type)
       r = select_one
       increment_method = "#{type}_increment!"
-      say "Incrementing #{r.revision} to #{r.revision.public_send(increment_method)}"
-      options[:dryrun] ? r.revision.write_to_file : r.revision.write!
+      say "Incrementing #{r.revision} to #{r.revision.public_send(increment_method)} (#{r.revision.src})"
+      if options[:dryrun]
+        r.revision.write(r.revision.src + ".new")
+        r.secondary_revisions.each do |s|
+          say "Propagating revision update to #{s.src}"
+          s.major = r.revision.major
+          s.minor = r.revision.minor
+          s.patch = r.revision.patch
+          s.write(s.src + ".new")
+        end
+      else
+        r.revision.write!
+        r.secondary_revisions.each do |s|
+          say "Propagating revision update to #{s.src}"
+          s.major = r.revision.major
+          s.minor = r.revision.minor
+          s.patch = r.revision.patch
+          s.write!
+        end
+      end
       say ''
       say "The automatic commit / tag step assumes you're only checking in changes to existing files"
       say "You can answer 'n' at the prompt and use 'revision tag' to generate a commit with the latest changelog entry and an associated tag after manually adding any new files to the repo"

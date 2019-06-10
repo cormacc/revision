@@ -15,10 +15,11 @@ class Revision::Info
   attr_accessor :regex
   attr_accessor :comment_prefix
 
-  def initialize(file, regex: nil, comment_prefix: nil)
+  def initialize(file, regex: nil, comment_prefix: nil, embed_changelog: true)
     @src=file
     @regex = regex.nil? ? DEFAULT_REGEX : /#{regex}/
     @comment_prefix = comment_prefix || DEFAULT_COMMENT_PREFIX
+    @embed_changelog = embed_changelog
     matched = false
     File.open(@src).each_line do |line|
       if line =~ @regex
@@ -65,15 +66,16 @@ class Revision::Info
     ref_info = self.class.new(@src, regex: @regex)
     raise 'No revision identifiers incremented' if ref_info.to_s == self.to_s
 
-    entry = get_changelog_entry
 
     text = File.read(@src)
     text.gsub!(@regex) { |match| "#{$~[:prefix]}#{@major}#{$~[:sep1]}#{@minor}#{$~[:sep2]}#{@patch}#{$~[:postfix]}" }
 
-    #Insert start/end tags if not present
-    text += new_changelog_placeholder unless text.match(CHANGELOG_START)
-
-    text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
+    if @embed_changelog
+      entry = get_changelog_entry
+      #Insert start/end tags if not present
+      text += new_changelog_placeholder unless text.match(CHANGELOG_START)
+      text.gsub!(CHANGELOG_START) { |match| [match, format_changelog_entry(entry)].join("\n") }
+    end
 
     File.open(output_file_name, 'w') { |f| f.write(text) }
   end

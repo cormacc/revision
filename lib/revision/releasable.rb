@@ -17,7 +17,7 @@ module Revision
 
     REVISION_PLACEHOLDER = /<REV>|<VER>/
 
-    attr_reader :root, :id, :revision, :build_steps, :artefacts, :git_tag_prefix
+    attr_reader :root, :id, :revision, :build_steps, :artefacts, :git_tag_prefix, :secondary_revisions
 
     # Load a file in yaml format containing one or more releasable definitions
     # @param root [String] An optional root directory argument
@@ -53,12 +53,17 @@ module Revision
     #   @git_repo
     # end
 
+    def _build_revision_info(definition, embed_changelog: true)
+      Info.new(File.join(@root,definition[:src]), regex: definition[:regex], comment_prefix: definition[:comment_prefix], embed_changelog: embed_changelog)
+    end
+
     def initialize(root: nil, config: {})
 
       root ||= Dir.getwd
       @root = Pathname.new(root).realpath
       @id = config[:id] || File.basename(@root)
-      @revision = Info.new(File.join(@root,config[:revision][:src]), regex: config[:revision][:regex], comment_prefix: config[:revision][:comment_prefix])
+      @revision = _build_revision_info(config[:revision], embed_changelog: true)
+      @secondary_revisions = config[:secondary_revisions].nil? ? [] : config[:secondary_revisions].map { |r| _build_revision_info(r, embed_changelog:false)}
       @git_tag_prefix = config[:revision][:git_tag_prefix].nil? ? 'v' : "#{config[:revision][:git_tag_prefix]}_v"
       # Legacy definition syntax compatibility
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
