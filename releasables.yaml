@@ -2,7 +2,7 @@
   - :id: revision
     :revision:
       :src: lib/revision/version.rb
-      :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>")
+      :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>".freeze)
       :comment_prefix: "#"
     :build_steps:
       - bundle exec rake install
