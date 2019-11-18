@@ -121,7 +121,7 @@ class Revision::Info
   # Prefixes the entry with an empty line, then prefixes each line with comment chars
   # and converts the line entries to a single string
   def format_changelog_entry(entry_lines)
-    entry_lines.unshift('').map { |line| "#{@comment_prefix} #{line}"}.join("\n")
+    entry_lines.unshift('').map { |line| "#{@comment_prefix} #{line}".rstrip()}.join("\n")
   end
 
   def get_changelog_entry

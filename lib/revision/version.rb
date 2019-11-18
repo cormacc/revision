@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.4.0".freeze
+  VERSION = "1.4.1".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.4.1 (18 Nov 2019)
+# - Updated to strip trailing whitespace after comment char for empty line
 #
 # Version 1.4.0 (10 Jun 2019)
 # - Now allow the definition of one or more 'secondary_revisions', where a revision ID can be updated with or without an embedded changelog
