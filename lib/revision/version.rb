@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.4.1".freeze
+  VERSION = "1.5.0".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.5.0 (13 Feb 2020)
+# - Now handles multiple deployment destinations in releasables.yaml
 #
 # Version 1.4.1 (18 Nov 2019)
 # - Updated to strip trailing whitespace after comment char for empty line
