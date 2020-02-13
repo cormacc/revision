@@ -95,7 +95,7 @@ module Revision
 
     def exec_pipeline(type, steps, skip_steps=0)
       exec_steps = steps[skip_steps..-1]
-      puts "{type} :: Executing steps #{skip_steps+1} to #{steps.length}..."
+      puts "#{type} :: Executing steps #{skip_steps+1} to #{steps.length}..."
       Dir.chdir(@root) do
         exec_steps.each_with_index do |step, index|
           step_index = index+1+skip_steps
@@ -196,22 +196,23 @@ module Revision
         src = File.join(@root,src)
         dest = dest_prefix.empty? ? dest : File.join(dest_prefix, dest)
         amap[src] = dest
-        puts "... (#{index+1}/#{@artefacts.length}) #{src} => #{dest}"
       end
       amap
     end
 
     def archive
       puts "Archiving #{@artefacts.length} build artefacts as #{archive_name}..."
-      puts artefact_map
+      amap = artefact_map
       if File.exist?(archive_name)
         puts "... deleting existing archive"
         File.delete(archive_name)
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
-        artefact_map.each do |src, dest|
+        amap.each.with_index(1) do |entry, idx|
+          src, dest = entry
           #TODO: Add directory processing....
-          zipfile.add(dest,src)
+          puts "... (#{idx}/#{amap.length}) #{src} => #{dest}"
+          zipfile.add(dest, src)
         end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
@@ -226,26 +227,55 @@ module Revision
     end
 
     def deploy(destination='')
-      if destination=='' and @config.dig(:deploy, :dest)
-        destination = @config[:deploy][:dest]
+      destinations = []
+      if not destination.empty?
+        destinations.append({dest: destination})
+      elsif @config.dig(:deploy)
+        if @config[:deploy].kind_of?(Array)
+          destinations.append(*@config[:deploy])
+        else
+          destinations.append(@config[:deploy])
+        end
       end
 
-      raise Errors::NotSpecified.new(':deploy/:dest') if destination==''
-      destination = File.expand_path(destination)
+      raise Errors::NotSpecified.new(':deploy') if destinations.empty?
 
       if @config.dig(:deploy, :pre)
         exec_pipeline('deploy (pre)', @config[:deploy][:pre])
       end
 
-      puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
-      artefact_map(destination).each do |src, dest|
-        if File.exist?(dest)
-          puts "... deleting existing '#{dest}'"
-          FileUtils.rm_rf(dest)
+      destinations.each do |d|
+        destination = File.expand_path(d[:dest])
+
+        if d.dig(:pre)
+          exec_pipeline('deploy (pre / #{d[:dest]})', d[:pre])
         end
-        FileUtils.cp_r(src,dest)
+
+        puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
+        if not File.exist?(destination)
+          puts "... folder not found -> creating ... '#{destination}'"
+          FileUtils.mkdir_p(destination)
+        end
+        amap = artefact_map(destination)
+        amap.each.with_index(1) do |entry, idx|
+          src, dest = entry
+          puts "... (#{idx}/#{amap.length}) #{src} => #{dest}"
+          if File.exist?(dest)
+            puts "... deleting existing '#{dest}' ..."
+            FileUtils.rm_rf(dest)
+          end
+          puts "... deploying '#{src}' -> '#{dest}"
+          FileUtils.cp_r(src,dest)
+        end
+        File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
+
+        if d.dig(:post)
+          exec_pipeline('deploy (post / #{d[:dest]})', d[:post])
+        end
       end
-      File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
+
+
+
       if @config.dig(:deploy, :post)
         exec_pipeline('deploy (post)', @config[:deploy][:post])
       end
