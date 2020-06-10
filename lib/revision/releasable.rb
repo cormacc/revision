@@ -141,8 +141,12 @@ module Revision
       "#{@git_tag_prefix}#{revision}"
     end
 
+    def escape(a_string)
+      a_string.gsub('"',"\\\"")
+    end
+
     def tag_annotation
-      @revision.last_changelog_entry.join("\n")
+      escape(@revision.last_changelog_entry.join("\n"))
     end
 
     def commit_message
@@ -153,7 +157,7 @@ module Revision
         commit_lines << "Also..."
         commit_lines += changelog_entry[2..-1]
       end
-      commit_lines.join("\n")
+      escape(commit_lines.join("\n"))
     end
 
     def tag
@@ -162,6 +166,7 @@ module Revision
         puts commit_message
         system("git commit -a -m \"#{commit_message}\"")
         puts "Tagging as #{tag_id}"
+        puts "git tag -a #{tag_id} -m \"#{tag_annotation}\""
         system("git tag -a #{tag_id} -m \"#{tag_annotation}\"")
       end
     end

@@ -1,9 +1,15 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.5.0".freeze
+  VERSION = "1.5.2".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.5.2 (10 Jun 2020)
+# - Uprevving around undeletable git tag
+#
+## Version 1.5.1 (10 Jun 2020)
+# - Escape " and ' in commit message when constructing git command line (' still problematic in some shells)
 #
 # Version 1.5.0 (13 Feb 2020)
 # - Now handles multiple deployment destinations in releasables.yaml
