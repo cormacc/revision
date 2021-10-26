@@ -166,7 +166,6 @@ module Revision
         puts commit_message
         system("git commit -a -m \"#{commit_message}\"")
         puts "Tagging as #{tag_id}"
-        puts "git tag -a #{tag_id} -m \"#{tag_annotation}\""
         system("git tag -a #{tag_id} -m \"#{tag_annotation}\"")
       end
     end
@@ -245,9 +244,11 @@ module Revision
 
       raise Errors::NotSpecified.new(':deploy') if destinations.empty?
 
-      if @config.dig(:deploy, :pre)
-        exec_pipeline('deploy (pre)', @config[:deploy][:pre])
-      end
+      #... Eliminated global deployment pre/post functions.
+      #... if applicable to all dests, the logic should probably be a build step...
+      # if @config.dig(:deploy, :pre)
+      #   exec_pipeline('deploy (pre)', @config[:deploy][:pre])
+      # end
 
       destinations.each do |d|
         destination = File.expand_path(d[:dest])
@@ -279,11 +280,9 @@ module Revision
         end
       end
 
-
-
-      if @config.dig(:deploy, :post)
-        exec_pipeline('deploy (post)', @config[:deploy][:post])
-      end
+      # if @config.dig(:deploy, :post)
+      #   exec_pipeline('deploy (post)', @config[:deploy][:post])
+      # end
     end
 
     def package

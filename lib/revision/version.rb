@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.5.2".freeze
+  VERSION = "1.5.3".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.5.3 (26 Oct 2021)
+# - Multiple deployment destinations bugfix -- only last destination was being used.
 #
 # Version 1.5.2 (10 Jun 2020)
 # - Uprevving around undeletable git tag

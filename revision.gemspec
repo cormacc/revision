@@ -28,4 +28,15 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake", "~> 13.0"
   spec.add_development_dependency "rspec", "~> 3.0"
   spec.add_development_dependency "pry"
+  #emacs ruby layer deps...
+  #...lsp backend
+  spec.add_development_dependency "steep"
+  spec.add_development_dependency "solargraph"
+  #...robe backend
+  #....watch this space
+  #...generic
+  spec.add_development_dependency "ruby_parser"
+  spec.add_development_dependency "rubocop"
+  spec.add_development_dependency "prettier"
+  spec.add_development_dependency "seeing_is_believing"
 end
