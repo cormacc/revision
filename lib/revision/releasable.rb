@@ -69,7 +69,7 @@ module Revision
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts] || []
       @artefacts.each { |a| a[:dest] ||= File.basename(a[:src]) } unless @artefacts.nil? || @artefacts.empty?
-      @artefacts.each { |a| a[:md5] = true if a[:md5].nil? } unless @artefacts.nil? || @artefacts.empty?
+      # @artefacts.each { |a| a[:md5] = true if a[:md5].nil? } unless @artefacts.nil? || @artefacts.empty?
       @config = config
     end
 
@@ -188,39 +188,47 @@ module Revision
       "#{@id}_revision_history_v#{@revision}.txt"
     end
 
-    def artefact_map(dest_prefix = '')
-      amap = {}
-      @artefacts.each_with_index do |a, index|
-        src = a[:src].gsub(REVISION_PLACEHOLDER, @revision.to_s)
-        dest = a[:dest].gsub(REVISION_PLACEHOLDER, @revision.to_s)
-        if Gem.win_platform? && !src.end_with?('.exe') && File.exist?(File.join(@root, src + '.exe'))
-          puts "... windows platform -- appending '.exe' (#{src})"
-          src += '.exe'
-          dest += '.exe' unless dest.end_with?('.exe')
-        end
-        src = File.join(@root,src)
-        dest = dest_prefix.empty? ? dest : File.join(dest_prefix, dest)
-        amap[src] = dest
+    def interp_rev(string)
+      string.gsub(REVISION_PLACEHOLDER, @revision.to_s)
+    end
+
+    def normalise_artefact(a)
+      src_norm = interp_rev(a[:src])
+      a_norm = {
+        src: src_norm,
+        dest: a[:dest].nil? ? File.basename(src_norm) : interp_rev(a[:dest]),
+        md5: a[:md5].nil? ? true : a[:md5]
+      }
+      if Gem.win_platform? && !a_norm[:src].end_with?('.exe') && File.exist?(File.join(@root, a_norm[:src] + '.exe'))
+        puts "... windows platform -- appending '.exe' ('#{a_norm[:src]}' -> '#{a_norm[src]}.exe')"
+        a_norm[:src] += '.exe'
+        a_norm[:dest] += '.exe' unless a_norm[:dest].end_with?('.exe')
       end
-      amap
+      a_norm
+    end
+
+    def artefacts
+      @artefacts.map { |a| normalise_artefact(a)}
     end
 
     def archive
       puts "Archiving #{@artefacts.length} build artefacts as #{archive_name}..."
-      amap = artefact_map
       if File.exist?(archive_name)
         puts "... deleting existing archive"
         File.delete(archive_name)
       end
       Zip::File.open(archive_name, Zip::File::CREATE) do |zipfile|
-        amap.each.with_index(1) do |entry, idx|
-          src, dest = entry
-          #TODO: Add directory processing....
-          puts "... (#{idx}/#{amap.length}) #{src} => #{dest}"
-          zipfile.add(dest, src)
-          md5name = "#{dest}.md5"
-          puts "... (#{idx}/#{amap.length}) embedding md5sum as #{md5name}"
-          zipfile.get_output_stream(md5name) { |os| os.write("#{MD5.from_file(src)}")}
+        zip_entries = artefacts
+        zip_entries.each.with_index(1) do |a, idx|
+          puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: <= #{a[:src]}"
+          zipfile.add(a[:dest], a[:src])
+          if a[:md5]
+            md5name = "#{a[:dest]}.md5"
+            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: embedding md5sum (#{md5name})"
+            zipfile.get_output_stream(md5name) { |os| os.write("#{MD5.from_file(a[:src])}")}
+          else
+            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: no md5sum required"
+          end
         end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
@@ -259,22 +267,23 @@ module Revision
           exec_pipeline('deploy (pre / #{d[:dest]})', d[:pre])
         end
 
-        puts "Deploying #{@artefacts.length} build artefacts to #{destination}..."
+        puts "Deploying #{artefacts.length} build artefacts to #{destination}..."
         if not File.exist?(destination)
           puts "... folder not found -> creating ... '#{destination}'"
           FileUtils.mkdir_p(destination)
         end
-        amap = artefact_map(destination)
-        amap.each.with_index(1) do |entry, idx|
-          src, dest = entry
-          puts "... (#{idx}/#{amap.length}) #{src} => #{dest}"
+        artefacts.each.with_index(1) do |a, idx|
+          # src, dest = entry
+          src = File.join(@root,a[:src])
+          dest = destination.empty? ? a[:dest] : File.join(destination, a[:dest])
+          puts "... (#{idx}/#{artefacts.length}) #{src} => #{dest}"
           if File.exist?(dest)
             puts "... deleting existing '#{dest}' ..."
             FileUtils.rm_rf(dest)
           end
           puts "... deploying '#{src}' -> '#{dest}'"
           FileUtils.cp_r(src,dest)
-          puts "... writing md5sum for '#{dest}' to '#{MD5.from_file(dest).write}'"
+          puts "... writing md5sum for '#{dest}' to '#{MD5.from_file(dest).write}'" if a[:md5]
         end
         File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
 

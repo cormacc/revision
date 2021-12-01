@@ -110,7 +110,9 @@ module Revision
     method_option :file, :aliases => "-f", :type => :string, :default => nil ,:desc => "File to md5sum (defaults to build artefacts defined in yaml)"
     def md5
       r = select_one
-      files = options[:file].nil? ? r.artefact_map.keys : [options[:file]]
+      files = options[:file].nil? ?
+                r.artefacts.select { |a| a[:md5]==true }.map { |a| a[:src] } :
+                [options[:file]]
       raise "No files specified" unless files.length
       puts "Calculating md5sum for files #{files}"
       for f in files

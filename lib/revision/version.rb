@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.5.3".freeze
+  VERSION = "1.6.0".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.6.0 (01 Dec 2021)
+# - New feature: Automated MD5sum generation during 'archive' and 'deploy' tasks
 #
 # Version 1.5.3 (26 Oct 2021)
 # - Multiple deployment destinations bugfix -- only last destination was being used.

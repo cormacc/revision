@@ -13,3 +13,5 @@ Gemfile.lock
 
 README.html
 *.zip
+test-output
+*.md5
