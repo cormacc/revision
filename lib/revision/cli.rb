@@ -4,6 +4,7 @@ require_relative 'releasable'
 require_relative 'info'
 require_relative 'errors'
 require_relative 'version'
+require_relative 'md5'
 
 module Revision
   class CLI < Thor
@@ -103,6 +104,19 @@ module Revision
     desc 'tag', 'Commit the current revision to a local git repo and add a version tag'
     def tag
       select_one.tag
+    end
+
+    desc 'md5', 'Compute md5sums for current build artefacts'
+    method_option :file, :aliases => "-f", :type => :string, :default => nil ,:desc => "File to md5sum (defaults to build artefacts defined in yaml)"
+    def md5
+      r = select_one
+      files = options[:file].nil? ? r.artefact_map.keys : [options[:file]]
+      raise "No files specified" unless files.length
+      puts "Calculating md5sum for files #{files}"
+      for f in files
+        md5sum = Revision::MD5.from_file(f)
+        puts "#{md5sum}"
+      end
     end
 
     private

@@ -5,6 +5,12 @@
       :regex: (?<prefix>VERSION = ")(?<major>\d+)(?<sep1>\.)(?<minor>\d+)(?<sep2>\.)(?<patch>\d+)(?<postfix>".freeze)
       :comment_prefix: "#"
     :build_steps:
+      - mkdir -p test-output/2
       - bundle exec rake install
     :artefacts:
       - :src: pkg/revision-<VER>.gem
+      - :src: README.org
+        :md5: false
+    :deploy:
+      - :dest: ./test-output
+      - :dest: ./test-output/2

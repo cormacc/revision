@@ -68,7 +68,8 @@ module Revision
       # Legacy definition syntax compatibility
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts] || []
-      @artefacts.each { |a| a[:dest] ||= a[:src] } unless @artefacts.nil? || @artefacts.empty?
+      @artefacts.each { |a| a[:dest] ||= File.basename(a[:src]) } unless @artefacts.nil? || @artefacts.empty?
+      @artefacts.each { |a| a[:md5] = true if a[:md5].nil? } unless @artefacts.nil? || @artefacts.empty?
       @config = config
     end
 
@@ -217,16 +218,23 @@ module Revision
           #TODO: Add directory processing....
           puts "... (#{idx}/#{amap.length}) #{src} => #{dest}"
           zipfile.add(dest, src)
+          md5name = "#{dest}.md5"
+          puts "... (#{idx}/#{amap.length}) embedding md5sum as #{md5name}"
+          zipfile.get_output_stream(md5name) { |os| os.write("#{MD5.from_file(src)}")}
         end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
       end
+      archive_md5 = MD5.from_file(archive_name)
+      puts "... generating archive md5sum as #{archive_md5.md5filename} "
+      archive_md5.write
 
       if @config.dig(:archive)
         archive_root = File.expand_path(@config[:archive])
         puts "... moving #{archive_name} to #{archive_root}"
         FileUtils.mkdir_p(archive_root)
         FileUtils.mv(archive_name, archive_root)
+        FileUtils.mv(archive_md5.md5filename, archive_root)
       end
     end
 
@@ -243,12 +251,6 @@ module Revision
       end
 
       raise Errors::NotSpecified.new(':deploy') if destinations.empty?
-
-      #... Eliminated global deployment pre/post functions.
-      #... if applicable to all dests, the logic should probably be a build step...
-      # if @config.dig(:deploy, :pre)
-      #   exec_pipeline('deploy (pre)', @config[:deploy][:pre])
-      # end
 
       destinations.each do |d|
         destination = File.expand_path(d[:dest])
@@ -270,8 +272,9 @@ module Revision
             puts "... deleting existing '#{dest}' ..."
             FileUtils.rm_rf(dest)
           end
-          puts "... deploying '#{src}' -> '#{dest}"
+          puts "... deploying '#{src}' -> '#{dest}'"
           FileUtils.cp_r(src,dest)
+          puts "... writing md5sum for '#{dest}' to '#{MD5.from_file(dest).write}'"
         end
         File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
 
@@ -280,9 +283,6 @@ module Revision
         end
       end
 
-      # if @config.dig(:deploy, :post)
-      #   exec_pipeline('deploy (post)', @config[:deploy][:post])
-      # end
     end
 
     def package
