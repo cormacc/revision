@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.6.0".freeze
+  VERSION = "1.6.1".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 1.6.1 (31 Aug 2022)
+# - Fixed logging error preventing windows exe creation
 #
 # Version 1.6.0 (01 Dec 2021)
 # - New feature: Automated MD5sum generation during 'archive' and 'deploy' tasks
