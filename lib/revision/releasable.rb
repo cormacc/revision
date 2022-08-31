@@ -200,7 +200,7 @@ module Revision
         md5: a[:md5].nil? ? true : a[:md5]
       }
       if Gem.win_platform? && !a_norm[:src].end_with?('.exe') && File.exist?(File.join(@root, a_norm[:src] + '.exe'))
-        puts "... windows platform -- appending '.exe' ('#{a_norm[:src]}' -> '#{a_norm[src]}.exe')"
+        puts "... windows platform -- appending '.exe' ('#{a_norm[:src]}' -> '#{a_norm[:src]}.exe')"
         a_norm[:src] += '.exe'
         a_norm[:dest] += '.exe' unless a_norm[:dest].end_with?('.exe')
       end
