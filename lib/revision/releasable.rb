@@ -69,7 +69,7 @@ module Revision
       @build_def = config[:build] ? config[:build] : { environment: { variables: {}}, steps: config[:build_steps]}
       @artefacts = config[:artefacts] || []
       @artefacts.each { |a| a[:dest] ||= File.basename(a[:src]) } unless @artefacts.nil? || @artefacts.empty?
-      # @artefacts.each { |a| a[:md5] = true if a[:md5].nil? } unless @artefacts.nil? || @artefacts.empty?
+      # @artefacts.each { |a| a[:chk] = true if a[:chk].nil? } unless @artefacts.nil? || @artefacts.empty?
       @config = config
     end
 
@@ -194,10 +194,12 @@ module Revision
 
     def normalise_artefact(a)
       src_norm = interp_rev(a[:src])
+      # the :chk key replaced a legacy :md5 key -- support old syntax
+      chk_unified = a[:chk].nil? ? a[:md5] : a[:chk]
       a_norm = {
         src: src_norm,
         dest: a[:dest].nil? ? File.basename(src_norm) : interp_rev(a[:dest]),
-        md5: a[:md5].nil? ? true : a[:md5]
+        chk: chk_unified.nil? ? true : chk_unified
       }
       if Gem.win_platform? && !a_norm[:src].end_with?('.exe') && File.exist?(File.join(@root, a_norm[:src] + '.exe'))
         puts "... windows platform -- appending '.exe' ('#{a_norm[:src]}' -> '#{a_norm[:src]}.exe')"
@@ -222,27 +224,27 @@ module Revision
         zip_entries.each.with_index(1) do |a, idx|
           puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: <= #{a[:src]}"
           zipfile.add(a[:dest], a[:src])
-          if a[:md5]
-            md5name = "#{a[:dest]}.md5"
-            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: embedding md5sum (#{md5name})"
-            zipfile.get_output_stream(md5name) { |os| os.write("#{MD5.from_file(a[:src])}")}
+          if a[:chk]
+            chkfile = Checksum.from_file(a[:src])
+            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: embedding checksum (#{chkfile.chkfilename})"
+            zipfile.get_output_stream(chkfile.chkfilename) { |os| os.write("#{chkfile}")}
           else
-            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: no md5sum required"
+            puts "... (#{idx}/#{zip_entries.length}) #{a[:dest]} :: no checksum required"
           end
         end
         puts "... embedding revision history as #{changelog_name} "
         zipfile.get_output_stream(changelog_name) { |os| output_changelog(os)}
       end
-      archive_md5 = MD5.from_file(archive_name)
-      puts "... generating archive md5sum as #{archive_md5.md5filename} "
-      archive_md5.write
+      archive_checksum = Checksum.from_file(archive_name)
+      puts "... generating archive checksum as #{archive_checksum.chkfilename} "
+      archive_checksum.write
 
       if @config.dig(:archive)
         archive_root = File.expand_path(@config[:archive])
         puts "... moving #{archive_name} to #{archive_root}"
         FileUtils.mkdir_p(archive_root)
         FileUtils.mv(archive_name, archive_root)
-        FileUtils.mv(archive_md5.md5filename, archive_root)
+        FileUtils.mv(archive_checksum.chkfilename, archive_root)
       end
     end
 
@@ -283,7 +285,7 @@ module Revision
           end
           puts "... deploying '#{src}' -> '#{dest}'"
           FileUtils.cp_r(src,dest)
-          puts "... writing md5sum for '#{dest}' to '#{MD5.from_file(dest).write}'" if a[:md5]
+          puts "... writing checksum for '#{dest}' to '#{Checksum.from_file(dest).write}'" if a[:chk]
         end
         File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
 

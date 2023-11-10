@@ -9,7 +9,7 @@ end
 # - Fixed logging error preventing windows exe creation
 #
 # Version 1.6.0 (01 Dec 2021)
-# - New feature: Automated MD5sum generation during 'archive' and 'deploy' tasks
+# - New feature: Automated checksum generation during 'archive' and 'deploy' tasks
 #
 # Version 1.5.3 (26 Oct 2021)
 # - Multiple deployment destinations bugfix -- only last destination was being used.

@@ -4,7 +4,7 @@ require_relative 'releasable'
 require_relative 'info'
 require_relative 'errors'
 require_relative 'version'
-require_relative 'md5'
+require_relative 'checksum'
 
 module Revision
   class CLI < Thor
@@ -111,13 +111,28 @@ module Revision
     def md5
       r = select_one
       files = options[:file].nil? ?
-                r.artefacts.select { |a| a[:md5]==true }.map { |a| a[:src] } :
+                r.artefacts.select { |a| a[:chk]==true }.map { |a| a[:src] } :
                 [options[:file]]
       raise "No files specified" unless files.length
-      puts "Calculating md5sum for files #{files}"
+      puts "Calculating checksum for files #{files}"
       for f in files
-        md5sum = Revision::MD5.from_file(f)
-        puts "#{md5sum}"
+        checksum = Revision::Checksum.from_file(f, type: Revision::Checksum::MD5)
+        puts "#{checksum}"
+      end
+    end
+
+    desc 'chk', 'Compute sha512 checksums for current build artefacts'
+    method_option :file, :aliases => "-f", :type => :string, :default => nil ,:desc => "File to checksum (defaults to build artefacts defined in yaml)"
+    def chk
+      r = select_one
+      files = options[:file].nil? ?
+                r.artefacts.select { |a| a[:chk]==true }.map { |a| a[:src] } :
+                [options[:file]]
+      raise "No files specified" unless files.length
+      puts "Calculating checksum for files #{files}"
+      for f in files
+        checksum = Revision::Checksum.from_file(f, type: Revision::Checksum::SHA512)
+        puts "#{checksum}"
       end
     end
 
