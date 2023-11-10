@@ -11,8 +11,10 @@
 .rspec_status
 Gemfile.lock
 
+# exports / local build artefacts
 README.html
 *.zip
-test-output
 *.md5
+*.sha512
+test-output
 .direnv
