@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "1.6.1".freeze
+  VERSION = "2.0.0".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 2.0.0 (10 Nov 2023)
+# - new(checksum): Now using SHA512 rather than MD5 checksums
 #
 # Version 1.6.1 (31 Aug 2022)
 # - Fixed logging error preventing windows exe creation
