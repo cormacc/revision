@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "2.0.0".freeze
+  VERSION = "2.0.1".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 2.0.1 (30 Nov 2023)
+# - deps(thor): Relaxed version dep from ~>1.0 to >=0.14
 #
 # Version 2.0.0 (10 Nov 2023)
 # - new(checksum): Now using SHA512 rather than MD5 checksums
