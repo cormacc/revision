@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
 
   spec.require_paths = ["lib"]
 
-  spec.add_runtime_dependency 'thor', '~> 1.0'
+  spec.add_runtime_dependency 'thor', '>= 0.14'
   spec.add_runtime_dependency 'rubyzip', '~> 2.0'
 
   spec.add_development_dependency "bundler", "~> 2.0"
