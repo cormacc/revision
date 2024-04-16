@@ -1,9 +1,12 @@
 # Defines the revision ID for the revision gem
 module Revision
-  VERSION = "2.0.1".freeze
+  VERSION = "2.1.0".freeze
 end
 
 # <BEGIN CHANGELOG>
+#
+# Version 2.1.0 (16 Apr 2024)
+# - feat(deploy): A deployment target can now be a series of commands rather than a filesystem destination
 #
 # Version 2.0.1 (30 Nov 2023)
 # - deps(thor): Relaxed version dep from ~>1.0 to >=0.14
