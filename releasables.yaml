@@ -19,3 +19,7 @@
     :deploy:
       - :dest: ./test-output
       - :dest: ./test-output/2
+      # And check if the new (v2.0.2) deployment steps work....
+      - :steps:
+          - mkdir -p ./test-output/3
+          - touch ./test-output/3/bla.bla

@@ -248,6 +248,38 @@ module Revision
       end
     end
 
+    def deploy_to(d)
+      destination = File.expand_path(d[:dest])
+
+      if d.dig(:pre)
+        exec_pipeline('deploy (pre / #{d[:dest]})', d[:pre])
+      end
+
+      puts "Deploying #{artefacts.length} build artefacts to #{destination}..."
+      if not File.exist?(destination)
+        puts "... folder not found -> creating ... '#{destination}'"
+        FileUtils.mkdir_p(destination)
+      end
+      artefacts.each.with_index(1) do |a, idx|
+        # src, dest = entry
+        src = File.join(@root,a[:src])
+        dest = destination.empty? ? a[:dest] : File.join(destination, a[:dest])
+        puts "... (#{idx}/#{artefacts.length}) #{src} => #{dest}"
+        if File.exist?(dest)
+          puts "... deleting existing '#{dest}' ..."
+          FileUtils.rm_rf(dest)
+        end
+        puts "... deploying '#{src}' -> '#{dest}'"
+        FileUtils.cp_r(src,dest)
+        puts "... writing checksum for '#{dest}' to '#{Checksum.from_file(dest).write}'" if a[:chk]
+      end
+      File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
+
+      if d.dig(:post)
+        exec_pipeline('deploy (post / #{d[:dest]})', d[:post])
+      end
+    end
+
     def deploy(destination='')
       destinations = []
       if not destination.empty?
@@ -263,34 +295,12 @@ module Revision
       raise Errors::NotSpecified.new(':deploy') if destinations.empty?
 
       destinations.each do |d|
-        destination = File.expand_path(d[:dest])
-
-        if d.dig(:pre)
-          exec_pipeline('deploy (pre / #{d[:dest]})', d[:pre])
-        end
-
-        puts "Deploying #{artefacts.length} build artefacts to #{destination}..."
-        if not File.exist?(destination)
-          puts "... folder not found -> creating ... '#{destination}'"
-          FileUtils.mkdir_p(destination)
-        end
-        artefacts.each.with_index(1) do |a, idx|
-          # src, dest = entry
-          src = File.join(@root,a[:src])
-          dest = destination.empty? ? a[:dest] : File.join(destination, a[:dest])
-          puts "... (#{idx}/#{artefacts.length}) #{src} => #{dest}"
-          if File.exist?(dest)
-            puts "... deleting existing '#{dest}' ..."
-            FileUtils.rm_rf(dest)
-          end
-          puts "... deploying '#{src}' -> '#{dest}'"
-          FileUtils.cp_r(src,dest)
-          puts "... writing checksum for '#{dest}' to '#{Checksum.from_file(dest).write}'" if a[:chk]
-        end
-        File.open(File.join(destination,changelog_name),'w') { |f| output_changelog(f)}
-
-        if d.dig(:post)
-          exec_pipeline('deploy (post / #{d[:dest]})', d[:post])
+        if d.dig(:dest)
+          deploy_to(d)
+        elsif d.dig(:steps)
+          exec_pipeline("deploy", d[:steps])
+        else
+          puts "ERROR: Please specify a series of deployment :steps: or a :dest: in releasables.yaml"
         end
       end
 
